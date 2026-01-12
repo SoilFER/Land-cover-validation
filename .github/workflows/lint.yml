@@ -1,0 +1,42 @@
+name: Lint
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Check for sensitive files
+      run: |
+        if [ -f "secrets/credentials.json" ] || [ -f ".env" ]; then
+          echo "ERROR: Sensitive files found in repository!"
+          exit 1
+        fi
+        echo "No sensitive files detected."
+
+    - name: Check file structure
+      run: |
+        # Verify key files exist
+        test -f "server.js" || { echo "server.js missing"; exit 1; }
+        test -f "package.json" || { echo "package.json missing"; exit 1; }
+        test -f "Dockerfile" || { echo "Dockerfile missing"; exit 1; }
+        test -d "views" || { echo "views/ missing"; exit 1; }
+        test -d "n8n" || { echo "n8n/ missing"; exit 1; }
+        echo "File structure check passed."

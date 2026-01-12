@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validate <%= record.siteId %></title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Mapbox GL JS -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+
+	<!-- ArcGIS API -->
+	<link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/dark/main.css">
+	<script src="https://js.arcgis.com/4.29/"></script>
+
+    <style>
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+
+        .photo-thumb {
+            object-fit: cover;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .photo-thumb:hover { transform: scale(1.02); }
+
+        .img-placeholder {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        #map, #esriMap { width: 100%; height: 100%; }
+
+        .marker-pin {
+            width: 10px;
+            height: 10px;
+            border-radius: 50% 50% 50% 0;
+            background: #ef4444;
+            transform: rotate(-45deg);
+            border: 2px solid #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        .marker-pin::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            position: absolute;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .photo-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 1000;
+            cursor: zoom-out;
+        }
+        .photo-modal.active { display: flex; }
+        .photo-modal img {
+            max-width: 95vw;
+            max-height: 95vh;
+            object-fit: contain;
+            margin: auto;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 h-screen w-screen overflow-hidden font-sans text-slate-200">
+
+    <!-- Fullscreen Photo Modal -->
+    <div id="photoModal" class="photo-modal items-center justify-center" onclick="closeModal()">
+        <img id="modalImg" src="" alt="Fullscreen">
+        <div class="absolute top-4 right-4 text-white text-sm bg-black/50 px-3 py-1 rounded">Click to close</div>
+    </div>
+
+    <form id="validationForm" action="/save" method="POST" class="h-full w-full flex gap-2 p-2 bg-slate-900">
+        <input type="hidden" name="rowNumber" value="<%= record.rowNumber %>">
+        <input type="hidden" name="validation" id="inputValidation" required>
+        <input type="hidden" name="returnPerPage" value="<%= typeof perPage !== 'undefined' ? perPage : '20' %>">
+
+        <!-- LEFT: Main Content (80% width) -->
+        <div class="w-[80%] flex flex-col gap-2">
+
+        <!-- TOP: Photos (55% height) -->
+        <div class="h-[55%] flex gap-1">
+
+            <!-- Left: Maps Column (2 stacked, 20% of 80% = 16% total) -->
+            <div class="w-[20%] flex flex-col gap-1">
+
+                <!-- Mapbox Map -->
+                <div class="h-1/2 rounded-lg overflow-hidden relative border border-slate-700">
+                    <div id="map"></div>
+                    <div class="absolute top-1 left-1 bg-black/80 text-white px-1.5 py-0.5 text-[9px] rounded font-bold">
+                        Mapbox
+                    </div>
+                    <div class="absolute bottom-1 left-1 bg-black/80 text-white px-1.5 py-0.5 text-[9px] rounded font-mono">
+                        <%= Number(record.latitude).toFixed(4) %>, <%= Number(record.longitude).toFixed(4) %>
+                    </div>
+                </div>
+
+                <!-- ESRI Map -->
+                <div class="h-1/2 rounded-lg overflow-hidden relative border border-slate-700">
+                    <div id="esriMap"></div>
+                    <div class="absolute top-1 left-1 bg-black/80 text-white px-1.5 py-0.5 text-[9px] rounded font-bold">
+                        Esri HD
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right: 4 Ground Photos -->
+            <%
+            const photos = [
+                { url: record.photoNorth, label: 'N', full: 'North' },
+                { url: record.photoEast, label: 'E', full: 'East' },
+                { url: record.photoSouth, label: 'S', full: 'South' },
+                { url: record.photoWest, label: 'W', full: 'West' }
+            ];
+            %>
+            <% photos.forEach((photo) => { %>
+            <div class="flex-1 relative rounded-lg overflow-hidden border border-slate-700 bg-slate-800">
+                <% if (photo.url) { %>
+                    <img
+                        src="<%= photo.url %>"
+                        alt="<%= photo.full %>"
+                        class="photo-thumb"
+                        loading="lazy"
+                        referrerpolicy="no-referrer"
+                        onclick="openModal('<%= photo.url %>')"
+                    >
+                <% } else { %>
+                    <div class="w-full h-full img-placeholder text-slate-700">
+                        <svg class="w-12 h-12 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <span class="text-xs text-slate-700">No <%= photo.full %></span>
+                    </div>
+                <% } %>
+                <span class="absolute top-2 left-2 bg-black/70 text-white text-sm px-2 py-1 rounded font-bold"><%= photo.label %></span>
+            </div>
+            <% }); %>
+        </div>
+
+        <!-- BOTTOM: Components Section (45% height) -->
+        <div class="h-[45%] flex flex-col gap-2 p-2 bg-slate-100 rounded-lg">
+
+                <!-- Site Info Header -->
+                <div class="bg-gradient-to-br from-indigo-50 to-blue-50 px-3 py-2 rounded-lg border border-indigo-200">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1 class="text-lg font-bold text-indigo-900"><%= record.siteId %></h1>
+                            <div class="text-[9px] text-indigo-700 mt-0.5">
+                                <strong>PSU:</strong> <%= record.psuId %> | <strong>Province:</strong> <%= record.province %> | <strong>Surveyor:</strong> <%= record.surveyor %>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="inline-block px-2 py-1 bg-amber-200 text-amber-900 text-xs font-bold rounded"><%= record.primaryClass %></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Components Grid (4 boxes) -->
+                <div class="flex-1 grid grid-cols-4 gap-2 min-h-0">
+                    <% ['comp1', 'comp2', 'comp3', 'comp4'].forEach((compKey, idx) => {
+                        const comp = record[compKey];
+                        const hasData = comp && (comp.classification || comp.percentage);
+                    %>
+                    <div class="bg-white rounded-lg border border-slate-300 flex flex-col overflow-hidden <%= hasData ? '' : 'opacity-40' %>">
+                        <div class="bg-gradient-to-r from-indigo-600 to-indigo-500 px-2 py-1 border-b border-indigo-700 flex justify-between items-center">
+                            <span class="font-bold text-white text-[10px]">COMP <%= idx + 1 %></span>
+                            <% if (comp && comp.percentage) { %>
+                                <span class="bg-white text-indigo-700 text-[9px] px-1.5 py-0.5 rounded font-bold"><%= comp.percentage %>%</span>
+                            <% } else { %>
+                                <span class="bg-white/30 text-white text-[9px] px-1 py-0.5 rounded font-bold">--</span>
+                            <% } %>
+                        </div>
+                        <div class="p-1.5 overflow-y-auto text-[9px] space-y-0.5 flex-1 bg-slate-50">
+                            <% if (hasData) { %>
+                                <% if (comp.classification) { %>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-600 font-medium">Class:</span>
+                                    <span class="text-slate-900 text-right truncate ml-1 font-semibold"><%= comp.classification %></span>
+                                </div>
+                                <% } %>
+                                <!-- Parse details string -->
+                                <% if (comp.details) {
+                                    const details = comp.details.split(' | ');
+                                    details.forEach(d => {
+                                        const [key, value] = d.split(':');
+                                        if (key && value) {
+                                %>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-600"><%= key.trim() %>:</span>
+                                    <span class="text-slate-900 text-right truncate ml-1"><%= value.trim() %></span>
+                                </div>
+                                <% }
+                                    });
+                                } %>
+                            <% } else { %>
+                                <div class="text-center text-slate-400 text-[9px] mt-4">No data</div>
+                            <% } %>
+                        </div>
+                    </div>
+                    <% }); %>
+                </div>
+
+        </div>
+
+        </div><!-- End LEFT Main Content -->
+
+        <!-- RIGHT: Validation Console (20% width, full height) -->
+        <div class="w-[20%] bg-white rounded-xl border border-slate-300 shadow-lg flex flex-col overflow-hidden">
+                <div class="bg-gradient-to-r from-slate-800 to-slate-700 text-white px-3 py-2.5 text-sm font-bold tracking-wide text-center">
+                    <% if (typeof isEditMode !== 'undefined' && isEditMode) { %>
+                        ✏️ EDIT VALIDATION
+                    <% } else { %>
+                        VALIDATE
+                    <% } %>
+                </div>
+
+                <% if (typeof isEditMode !== 'undefined' && isEditMode) { %>
+                <div class="px-3 py-2 bg-blue-50 border-b border-blue-200 text-blue-800 text-xs">
+                    <strong>📝 Edit Mode:</strong> Previously validated by <strong><%= record.existingValidation.validatorName %></strong>
+                    <% if (record.existingValidation.validationDate) { %>
+                    on <%= new Date(record.existingValidation.validationDate).toLocaleDateString() %>
+                    <% } %>
+                </div>
+                <% } %>
+
+                <div class="p-3 flex flex-col flex-1 gap-2.5 overflow-y-auto">
+
+                    <!-- Primary Classification -->
+                    <div class="bg-amber-50 px-3 py-2 rounded-lg border border-amber-300">
+                        <span class="text-[10px] uppercase font-bold text-amber-700">Category:</span>
+                        <span class="ml-2 inline-block px-2 py-1 bg-amber-200 text-amber-900 text-xs font-bold rounded"><%= record.primaryClass %></span>
+                    </div>
+
+                    <!-- Decision Buttons -->
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" onclick="setDecision('correct', this)"
+                            class="decision-btn flex flex-col items-center justify-center gap-1 py-3 bg-green-50 text-green-700 border-2 border-green-200 rounded-lg hover:bg-green-100 transition-all text-[11px] font-bold">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            Correct
+                        </button>
+
+                        <button type="button" onclick="setDecision('incorrect', this)"
+                            class="decision-btn flex flex-col items-center justify-center gap-1 py-3 bg-red-50 text-red-700 border-2 border-red-200 rounded-lg hover:bg-red-100 transition-all text-[11px] font-bold">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                            Incorrect
+                        </button>
+
+                        <button type="button" onclick="setDecision('unclear', this)"
+                            class="decision-btn flex flex-col items-center justify-center gap-1 py-3 bg-amber-50 text-amber-700 border-2 border-amber-200 rounded-lg hover:bg-amber-100 transition-all text-[11px] font-bold">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            Review
+                        </button>
+                    </div>
+
+                    <!-- Correction Panel -->
+                    <div id="correctionPanel" class="hidden space-y-2">
+                        <label class="text-[10px] uppercase font-bold text-red-700 mb-1 block">Correct Category:</label>
+                        <select id="correctionSelect" name="correctedClassification" onchange="checkCropRequirement()" class="w-full text-xs p-2 border border-red-300 rounded bg-red-50 text-slate-900 focus:ring-2 focus:ring-red-200 outline-none font-medium">
+                            <option value="">Select correct class...</option>
+                            <option value="cropland">Cropland</option>
+                            <option value="grassland">Grassland</option>
+                            <option value="forest">Forest</option>
+                            <option value="shrubland">Shrubland</option>
+                            <option value="bare_soil">Bare Soil</option>
+                            <option value="water">Water</option>
+                            <option value="settlement">Settlement</option>
+                            <option value="wetland">Wetland</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Crop Type Panel -->
+                    <div id="cropTypePanel" class="hidden">
+                        <label class="text-[10px] uppercase font-bold text-amber-700 mb-1 block">Main Crop:</label>
+                        <select name="mainCropType" id="mainCropTypeSelect" class="w-full text-xs p-2 border border-amber-300 rounded bg-amber-50 text-slate-900 focus:ring-2 focus:ring-amber-200 outline-none font-medium">
+                            <option value="">Select crop...</option>
+                            <% if (typeof crops !== 'undefined' && crops && crops.length > 0) { %>
+                                <% crops.forEach(function(crop) { %>
+                                    <option value="<%= crop %>"><%= crop %></option>
+                                <% }); %>
+                            <% } else { %>
+                                <option value="other">Other (no crops available)</option>
+                            <% } %>
+                        </select>
+                    </div>
+
+                    <!-- Surveyor Comments (Read-only) -->
+                    <% if (record.surveyorComments && record.surveyorComments.trim()) { %>
+                    <div class="bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
+                        <label class="text-[9px] uppercase font-bold text-blue-700 block mb-1">Surveyor Notes:</label>
+                        <p class="text-xs text-blue-900 whitespace-pre-wrap"><%= record.surveyorComments %></p>
+                    </div>
+                    <% } %>
+
+                    <!-- Validator Comments -->
+                    <div class="flex-1 flex flex-col min-h-0">
+                        <label class="text-[10px] uppercase font-bold text-slate-900 mb-1">Validator Comments:</label>
+                        <textarea name="comments" id="commentsTextarea"
+                            class="flex-1 text-xs p-2 border border-slate-300 rounded bg-slate-50 text-slate-900 focus:ring-2 focus:ring-indigo-200 outline-none min-h-[60px]"
+                            placeholder="Optional notes..."><%= record.comments || '' %></textarea>
+                    </div>
+
+                    <!-- Validator Name (Required) -->
+                    <div>
+                        <label class="text-[10px] uppercase font-bold text-slate-900 mb-1 block">Validator Name: <span class="text-red-600">*</span></label>
+                        <input type="text" name="validatorName" id="validatorNameInput" required
+                            class="w-full text-xs p-2 border border-slate-300 rounded bg-white text-slate-900 focus:ring-2 focus:ring-indigo-300 outline-none font-medium"
+                            placeholder="Enter your name..."
+                            value="<%= (typeof isEditMode !== 'undefined' && isEditMode && record.existingValidation.validatorName) ? record.existingValidation.validatorName : '' %>">
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit"
+                        class="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold text-sm rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        id="submitBtn" disabled>
+                        SUBMIT VALIDATION
+                    </button>
+
+                    <!-- Back to List -->
+                    <a href="/" class="text-center text-xs text-slate-500 hover:text-slate-700 transition">← Back to List</a>
+                </div>
+        </div>
+
+    </form>
+
+    <script>
+        const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5nZWxpbmk3NSIsImEiOiJja3hhdGU0cDcxOTI2MnByeXk3anRuaHhzIn0.Ap_pd-RrNtnnvMcY8hK1GA';
+        const LAT = <%= record.latitude || 0 %>;
+        const LNG = <%= record.longitude || 0 %>;
+
+        mapboxgl.accessToken = MAPBOX_TOKEN;
+
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/satellite-v9',
+            center: [LNG, LAT],
+            zoom: 16,
+            attributionControl: false
+        });
+
+        map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-left');
+
+        const markerEl = document.createElement('div');
+        markerEl.className = 'marker-pin';
+        new mapboxgl.Marker(markerEl).setLngLat([LNG, LAT]).addTo(map);
+
+        // ESRI ArcGIS Map Configuration
+        require([
+            "esri/Map",
+            "esri/views/MapView",
+            "esri/layers/TileLayer",
+            "esri/Graphic"
+        ], function(Map, MapView, TileLayer, Graphic) {
+
+            const imageryLayer = new TileLayer({
+                url: "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer"
+            });
+
+            const esriMap = new Map({
+                layers: [imageryLayer]
+            });
+
+            const esriView = new MapView({
+                container: "esriMap",
+                map: esriMap,
+                center: [LNG, LAT],
+                zoom: 18,
+                ui: {
+                    components: ["zoom"]
+                }
+            });
+
+            const pointGraphic = new Graphic({
+                geometry: {
+                    type: "point",
+                    longitude: LNG,
+                    latitude: LAT
+                },
+                symbol: {
+                    type: "simple-marker",
+                    color: [239, 68, 68],
+                    size: "12px",
+                    outline: {
+                        color: [255, 255, 255],
+                        width: 2
+                    }
+                }
+            });
+
+            esriView.graphics.add(pointGraphic);
+        });
+
+        // ============================================
+        // VALIDATION LOGIC
+        // ============================================
+        function setDecision(decision, btnElement) {
+            document.getElementById('inputValidation').value = decision;
+
+            document.querySelectorAll('.decision-btn').forEach(btn => {
+                btn.classList.remove('ring-4', 'ring-blue-400');
+            });
+            btnElement.classList.add('ring-4', 'ring-blue-400');
+
+            const correctionPanel = document.getElementById('correctionPanel');
+            const submitBtn = document.getElementById('submitBtn');
+
+            if (decision === 'incorrect') {
+                correctionPanel.classList.remove('hidden');
+                document.getElementById('correctionSelect').required = true;
+                submitBtn.disabled = true;
+            } else {
+                correctionPanel.classList.add('hidden');
+                document.getElementById('correctionSelect').required = false;
+                checkCropRequirement();
+            }
+        }
+
+        function checkCropRequirement() {
+            const decision = document.getElementById('inputValidation').value;
+            const primaryClass = "<%= record.primaryClass %>".toLowerCase();
+            const correctedClass = document.getElementById('correctionSelect').value.toLowerCase();
+
+            const cropPanel = document.getElementById('cropTypePanel');
+            const cropSelect = document.getElementById('mainCropTypeSelect');
+            const submitBtn = document.getElementById('submitBtn');
+
+            let showCrop = false;
+
+            if (decision === 'correct' && primaryClass.includes('cropland')) {
+                showCrop = true;
+            } else if (decision === 'incorrect' && correctedClass === 'cropland') {
+                showCrop = true;
+            }
+
+            if (showCrop) {
+                cropPanel.classList.remove('hidden');
+                cropSelect.required = true;
+                submitBtn.disabled = true;
+            } else {
+                cropPanel.classList.add('hidden');
+                cropSelect.required = false;
+                submitBtn.disabled = false;
+            }
+        }
+
+        document.getElementById('mainCropTypeSelect').addEventListener('change', function() {
+            const submitBtn = document.getElementById('submitBtn');
+            if (this.value) {
+                submitBtn.disabled = false;
+            } else {
+                submitBtn.disabled = true;
+            }
+        });
+
+        document.getElementById('correctionSelect').addEventListener('change', function() {
+            const submitBtn = document.getElementById('submitBtn');
+            if (this.value) {
+                checkCropRequirement();
+                const cropPanel = document.getElementById('cropTypePanel');
+                if (cropPanel.classList.contains('hidden')) {
+                    submitBtn.disabled = false;
+                }
+            } else {
+                submitBtn.disabled = true;
+            }
+        });
+
+        // ============================================
+        // PHOTO MODAL
+        // ============================================
+        function openModal(url) {
+            document.getElementById('modalImg').src = url;
+            document.getElementById('photoModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('photoModal').classList.remove('active');
+        }
+
+        document.getElementById('validationForm').addEventListener('submit', function(e) {
+            const decision = document.getElementById('inputValidation').value;
+            if (!decision) {
+                e.preventDefault();
+                alert('Please select a validation decision (Correct/Incorrect/Review)');
+                return false;
+            }
+        });
+
+        // ============================================
+        // EDIT MODE: PRE-FILL EXISTING VALIDATION DATA
+        // ============================================
+        <% if (typeof isEditMode !== 'undefined' && isEditMode && record.existingValidation) { %>
+        (function() {
+            const existing = <%- JSON.stringify(record.existingValidation) %>;
+
+            // Determine which decision button to activate based on isCorrect
+            let decision = '';
+            if (existing.isCorrect === 'YES') {
+                decision = 'correct';
+            } else if (existing.isCorrect === 'NO') {
+                decision = 'incorrect';
+            } else if (existing.isCorrect === 'UNCLEAR') {
+                decision = 'unclear';
+            }
+
+            // Activate the appropriate decision button
+            if (decision) {
+                const buttons = document.querySelectorAll('.decision-btn');
+                buttons.forEach(btn => {
+                    const onclick = btn.getAttribute('onclick');
+                    if (onclick && onclick.includes(`'${decision}'`)) {
+                        btn.click(); // This will trigger setDecision()
+                    }
+                });
+            }
+
+            // Pre-fill corrected classification if exists
+            if (existing.correctedClassification) {
+                setTimeout(() => {
+                    const correctionSelect = document.getElementById('correctionSelect');
+                    if (correctionSelect) {
+                        correctionSelect.value = existing.correctedClassification;
+                        checkCropRequirement();
+                    }
+                }, 100);
+            }
+
+            // Pre-fill main crop type if exists
+            if (existing.mainCropType) {
+                setTimeout(() => {
+                    const cropSelect = document.getElementById('mainCropTypeSelect');
+                    if (cropSelect) {
+                        cropSelect.value = existing.mainCropType;
+                        // Enable submit button if crop is selected
+                        if (cropSelect.value) {
+                            document.getElementById('submitBtn').disabled = false;
+                        }
+                    }
+                }, 200);
+            }
+
+            console.log('Edit mode: Pre-filled validation data', existing);
+        })();
+        <% } %>
+    </script>
+
+</body>
+</html>

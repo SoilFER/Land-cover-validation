@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Land Cover Validation Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      padding: 20px;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+    .header {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    h1 { color: #2c5282; margin-bottom: 10px; }
+    .subtitle { color: #718096; margin-bottom: 20px; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .stat-box {
+      padding: 15px;
+      background: #f7fafc;
+      border-radius: 6px;
+      border-left: 4px solid #4299e1;
+    }
+    .stat-label { font-size: 12px; color: #718096; text-transform: uppercase; }
+    .stat-value { font-size: 28px; font-weight: bold; color: #2d3748; margin-top: 5px; }
+    .progress-bar {
+      width: 100%;
+      height: 20px;
+      background: #e2e8f0;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 15px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #48bb78, #38a169);
+      transition: width 0.3s ease;
+    }
+    .table-container {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th {
+      background: #2c5282;
+      color: white;
+      padding: 15px 12px;
+      text-align: left;
+      font-weight: 500;
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 14px;
+    }
+    tr:hover { background: #f7fafc; }
+    .thumbnail {
+      width: 80px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 4px;
+      background: #e2e8f0;
+    }
+    .primary-class {
+      display: inline-block;
+      padding: 4px 8px;
+      background: #4299e1;
+      color: white;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .unique-types {
+      font-size: 12px;
+      color: #718096;
+      max-width: 200px;
+    }
+    .count-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      background: #48bb78;
+      color: white;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    .validate-btn {
+      display: inline-block;
+      padding: 8px 16px;
+      background: #48bb78;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    .validate-btn:hover { background: #38a169; }
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #718096;
+    }
+    .empty-state h2 { color: #2d3748; margin-bottom: 10px; }
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      background: white;
+      border-top: 1px solid #e2e8f0;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    .pagination-info {
+      color: #718096;
+      font-size: 14px;
+    }
+    .pagination-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .pagination-btn {
+      padding: 8px 12px;
+      background: #4299e1;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: background 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+    .pagination-btn:hover { background: #3182ce; }
+    .pagination-btn:disabled {
+      background: #cbd5e0;
+      cursor: not-allowed;
+    }
+    .pagination-btn.active {
+      background: #2c5282;
+    }
+    .page-number {
+      padding: 8px 12px;
+      color: #4299e1;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .tab {
+      padding: 12px 24px;
+      background: transparent;
+      color: #718096;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .tab:hover {
+      color: #2c5282;
+      background: #f7fafc;
+    }
+    .tab.active {
+      color: #2c5282;
+      border-bottom-color: #4299e1;
+      background: #f7fafc;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    .status-validated { background: #c6f6d5; color: #22543d; }
+    .status-corrected { background: #fed7d7; color: #742a2a; }
+    .status-review { background: #feebc8; color: #7c2d12; }
+    .edit-btn {
+      display: inline-block;
+      padding: 8px 16px;
+      background: #4299e1;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    .edit-btn:hover { background: #3182ce; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Land Cover Validation Dashboard</h1>
+      <p class="subtitle">SoilFER Project - Multi-Country Validation Interface</p>
+
+      <!-- Tabs Navigation -->
+      <div class="tabs">
+        <a href="/?country=<%= countryFilter %>&per_page=<%= pagination.perPage %>"
+           class="tab <%= viewMode === 'pending' ? 'active' : '' %>">
+          📋 Pending Validations (<%= stats.pending %>)
+        </a>
+        <a href="/validated?country=<%= countryFilter %>&per_page=<%= pagination.perPage %>"
+           class="tab <%= viewMode === 'validated' ? 'active' : '' %>">
+          ✅ Validated Sites (<%= stats.validated %>)
+        </a>
+      </div>
+
+      <!-- Country Filter & Per Page Selector -->
+      <div style="margin-top: 15px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <label style="font-weight: 600; color: #2c5282; font-size: 14px;">Filter by Country:</label>
+          <select id="countrySelect" onchange="updateFilters()"
+                  style="padding: 8px 12px; border: 2px solid #4299e1; border-radius: 6px; font-size: 14px; background: white; cursor: pointer; min-width: 180px;">
+            <option value="ALL" <%= countryFilter === 'ALL' ? 'selected' : '' %>>🌎 All Countries</option>
+            <option value="GTM" <%= countryFilter === 'GTM' ? 'selected' : '' %>>🇬🇹 Guatemala (GTM)</option>
+            <option value="HND" <%= countryFilter === 'HND' ? 'selected' : '' %>>🇭🇳 Honduras (HND)</option>
+            <option value="TUN" <%= countryFilter === 'TUN' ? 'selected' : '' %>>🇹🇳 Tunisia (TUN)</option>
+            <option value="MOZ" <%= countryFilter === 'MOZ' ? 'selected' : '' %>>🇲🇿 Mozambique (MOZ)</option>
+            <option value="GHA" <%= countryFilter === 'GHA' ? 'selected' : '' %>>🇬🇭 Ghana (GHA)</option>
+            <option value="ZMB" <%= countryFilter === 'ZMB' ? 'selected' : '' %>>🇿🇲 Zambia (ZMB)</option>
+            <option value="KEN" <%= countryFilter === 'KEN' ? 'selected' : '' %>>🇰🇪 Kenya (KEN)</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <label style="font-weight: 600; color: #2c5282; font-size: 14px;">Records per page:</label>
+          <select id="perPageSelect" onchange="updateFilters()"
+                  style="padding: 8px 12px; border: 2px solid #4299e1; border-radius: 6px; font-size: 14px; background: white; cursor: pointer;">
+            <option value="20" <%= pagination.perPage === 20 ? 'selected' : '' %>>20</option>
+            <option value="50" <%= pagination.perPage === 50 ? 'selected' : '' %>>50</option>
+            <option value="100" <%= pagination.perPage === 100 ? 'selected' : '' %>>100</option>
+          </select>
+        </div>
+
+        <% if (countryFilter !== 'ALL') { %>
+          <span style="font-size: 12px; color: #718096;">
+            Showing only <%= countryFilter %> sites
+          </span>
+        <% } %>
+      </div>
+
+      <script>
+        function updateFilters() {
+          const country = document.getElementById('countrySelect').value;
+          const perPage = document.getElementById('perPageSelect').value;
+          const viewMode = '<%= viewMode %>';
+          const basePath = viewMode === 'validated' ? '/validated' : '/';
+          window.location.href = `${basePath}?country=${country}&per_page=${perPage}`;
+        }
+      </script>
+
+
+      <div class="stats">
+        <div class="stat-box">
+          <div class="stat-label">Total Sites</div>
+          <div class="stat-value"><%= stats.total %></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Pending</div>
+          <div class="stat-value"><%= stats.pending %></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Validated</div>
+          <div class="stat-value"><%= stats.validated %></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Progress</div>
+          <div class="stat-value"><%= stats.progress %>%</div>
+        </div>
+      </div>
+
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: <%= stats.progress %>%"></div>
+      </div>
+    </div>
+
+    <% if (records.length > 0) { %>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Image</th>
+            <th>Site ID</th>
+            <th>Province</th>
+            <% if (viewMode === 'pending') { %>
+              <th>Primary Class</th>
+              <th>Unique Types</th>
+              <th>Components</th>
+              <th>Action</th>
+            <% } else { %>
+              <th>Final Class</th>
+              <th>Status</th>
+              <th>Validated By</th>
+              <th>Date</th>
+              <th>Action</th>
+            <% } %>
+          </tr>
+        </thead>
+        <tbody>
+          <% records.forEach(function(record) { %>
+          <tr>
+            <td>
+              <% if (record.photoSatellite) { %>
+                <img src="<%= record.photoSatellite %>" class="thumbnail" alt="Satellite"
+                     onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2260%22><rect fill=%22%23e2e8f0%22 width=%22100%%22 height=%22100%%22/><text x=%2250%%22 y=%2250%%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23718096%22 font-size=%2210%22>No Image</text></svg>'">
+              <% } else { %>
+                <div class="thumbnail" style="display:flex;align-items:center;justify-content:center;color:#718096;font-size:10px;">No Image</div>
+              <% } %>
+            </td>
+            <td><strong><%= record.siteId %></strong></td>
+            <td><%= record.province %></td>
+            <% if (viewMode === 'pending') { %>
+              <td><span class="primary-class"><%= record.primaryClass %></span></td>
+              <td>
+                <div class="unique-types">
+                  <%= record.uniqueClassifications %>
+                  <% if (record.classificationCount > 0) { %>
+                    <span class="count-badge"><%= record.classificationCount %></span>
+                  <% } %>
+                </div>
+              </td>
+              <td><span class="count-badge"><%= record.componentCount %></span></td>
+              <td>
+                <a href="/validate/<%= record.uuid %>?per_page=<%= pagination.perPage %>" class="validate-btn">Validate</a>
+              </td>
+            <% } else { %>
+              <td><span class="primary-class"><%= record.finalClassification || record.primaryClass %></span></td>
+              <td>
+                <% if (record.validationStatus === 'VALIDATED') { %>
+                  <span class="status-badge status-validated">✓ Validated</span>
+                <% } else if (record.validationStatus === 'CORRECTED') { %>
+                  <span class="status-badge status-corrected">✗ Corrected</span>
+                <% } else if (record.validationStatus === 'NEEDS_REVIEW') { %>
+                  <span class="status-badge status-review">⚠ Review</span>
+                <% } %>
+              </td>
+              <td><%= record.validatorName || 'N/A' %></td>
+              <td style="font-size:12px;color:#718096;">
+                <% if (record.validationDate) { %>
+                  <%= new Date(record.validationDate).toLocaleDateString() %>
+                <% } else { %>
+                  N/A
+                <% } %>
+              </td>
+              <td>
+                <a href="/validate/<%= record.uuid %>?per_page=<%= pagination.perPage %>" class="edit-btn">Edit</a>
+              </td>
+            <% } %>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+
+      <!-- Pagination Controls -->
+      <% if (pagination.totalPages > 1) { %>
+      <div class="pagination">
+        <div class="pagination-info">
+          Showing <%= pagination.startIndex %> - <%= pagination.endIndex %> of <%= pagination.totalRecords %> <%= viewMode === 'pending' ? 'pending' : 'validated' %> records
+        </div>
+
+        <div class="pagination-controls">
+          <%
+            const basePath = viewMode === 'validated' ? '/validated' : '/';
+            const buildPageLink = (page) => `${basePath}?country=${countryFilter}&per_page=${pagination.perPage}&page=${page}`;
+          %>
+          <% if (pagination.currentPage > 1) { %>
+            <a href="<%= buildPageLink(pagination.currentPage - 1) %>"
+               class="pagination-btn">← Previous</a>
+          <% } else { %>
+            <button class="pagination-btn" disabled>← Previous</button>
+          <% } %>
+
+          <%
+            // Show page numbers
+            const maxPagesToShow = 5;
+            let startPage = Math.max(1, pagination.currentPage - Math.floor(maxPagesToShow / 2));
+            let endPage = Math.min(pagination.totalPages, startPage + maxPagesToShow - 1);
+
+            if (endPage - startPage < maxPagesToShow - 1) {
+              startPage = Math.max(1, endPage - maxPagesToShow + 1);
+            }
+
+            if (startPage > 1) { %>
+              <a href="<%= buildPageLink(1) %>" class="pagination-btn">1</a>
+              <% if (startPage > 2) { %><span class="page-number">...</span><% } %>
+            <% }
+
+            for (let i = startPage; i <= endPage; i++) {
+              if (i === pagination.currentPage) { %>
+                <button class="pagination-btn active"><%= i %></button>
+              <% } else { %>
+                <a href="<%= buildPageLink(i) %>"
+                   class="pagination-btn"><%= i %></a>
+              <% }
+            }
+
+            if (endPage < pagination.totalPages) {
+              if (endPage < pagination.totalPages - 1) { %><span class="page-number">...</span><% } %>
+              <a href="<%= buildPageLink(pagination.totalPages) %>"
+                 class="pagination-btn"><%= pagination.totalPages %></a>
+            <% } %>
+
+          <% if (pagination.currentPage < pagination.totalPages) { %>
+            <a href="<%= buildPageLink(pagination.currentPage + 1) %>"
+               class="pagination-btn">Next →</a>
+          <% } else { %>
+            <button class="pagination-btn" disabled>Next →</button>
+          <% } %>
+        </div>
+      </div>
+      <% } %>
+    </div>
+    <% } else { %>
+    <div class="table-container">
+      <div class="empty-state">
+        <h2>All sites validated!</h2>
+        <p>No pending validations at this time.</p>
+      </div>
+    </div>
+    <% } %>
+  </div>
+</body>
+</html>

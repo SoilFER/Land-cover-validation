@@ -1,0 +1,36 @@
+{
+  "name": "Download Photo North",
+  "type": "n8n-nodes-base.httpRequest",
+  "typeVersion": 4.3,
+  "parameters": {
+    "url": "={{ $('Loop Over Items').item.json.download_url_north }}",
+    "authentication": "genericCredentialType",
+    "genericAuthType": "httpHeaderAuth",
+    "sendHeaders": true,
+    "headerParameters": {
+      "parameters": [
+        {
+          "name": "Authorization",
+          "value": "Token f166535f191d1ac07229c1ed9724d8b9481ae9e4"
+        }
+      ]
+    },
+    "options": {
+      "redirect": {
+        "redirect": {
+          "followRedirects": true,
+          "maxRedirects": 5
+        }
+      },
+      "response": {
+        "response": {
+          "responseFormat": "file",
+          "neverError": true,
+          "fullResponse": false
+        }
+      },
+      "timeout": 30000
+    }
+  },
+  "notes": "Downloads photo from KoboToolbox. URLs are cleaned (no ?format=json) by transformation script. neverError=true ensures workflow continues even if photo download fails."
+}

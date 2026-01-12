@@ -1,0 +1,1992 @@
+{
+  "name": "Land Cover - GLOBALv2",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 12
+            }
+          ]
+        }
+      },
+      "id": "9ee44449-5b62-47f1-ba50-acb3d2386b27",
+      "name": "Daily Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -656,
+        2896
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5a460eca-0e39-459f-aa26-6f44538ba7ad",
+              "name": "filter_date",
+              "value": "={{ $today.minus({days: 5}).format('yyyy-MM-dd') }}",
+              "type": "string"
+            },
+            {
+              "id": "upload-server-config",
+              "name": "upload_server",
+              "value": "https://validate.soildecisions.com",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e7022dc9-7268-4892-91ee-0cb39dface28",
+      "name": "Set Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -432,
+        2896
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1CjJmjtnN7sss7ZH1-ZzcALRPLq6VSbMx6-5mXg0HFoM/edit?usp=drive_link",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1701290838,
+          "mode": "list",
+          "cachedResultName": "LandCoverV2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1CjJmjtnN7sss7ZH1-ZzcALRPLq6VSbMx6-5mXg0HFoM/edit#gid=1701290838"
+        },
+        "options": {}
+      },
+      "id": "be799873-2943-47be-bc33-d0d79b8aa5d9",
+      "name": "Get Existing UUIDs",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -32,
+        3056
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "FUY8w7y42Z4APibm",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "fieldsToMatchString": "uuid",
+        "joinMode": "keepNonMatches",
+        "outputDataFrom": "input1",
+        "options": {}
+      },
+      "id": "671598c6-18d5-40a6-8d4c-4d31fea6bdfa",
+      "name": "Filter New Records Only",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        624,
+        2896
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// GTM TRANSFORMATION LOGIC\n// Extracts standard fields + 4 components + Photo URLs\n\nconst items = $input.all();\nconst returnData = [];\n\nfunction parsePercentage(value) {\n    if (!value) return 0;\n    const str = String(value);\n    if (str.includes('_')) {\n        const parts = str.split('_').map(Number);\n        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {\n            return Math.round((parts[0] + parts[1]) / 2);\n        }\n    }\n    const num = parseFloat(str);\n    return isNaN(num) ? 0 : num;\n}\n\nfunction generateImageName(countryCode, siteId, aspect, originalFilename) {\n    if (!originalFilename) return '';\n    const ext = '.jpg'; // Force jpg as per requirement or extract from original\n    // const ext = originalFilename.split('.').pop(); \n    const safeSiteId = siteId.replace(/[^a-zA-Z0-9_-]/g, '_');\n    return `${countryCode}-${safeSiteId}-${aspect.toLowerCase()}${ext}`;\n}\n\nfor (const item of items) {\n    const raw = item.json;\n    \n    const uuid = data._uuid || data['formhub/uuid'] || '';\n    const countryGroup = 'GTM';\n    const submissionTime = raw['_submission_time'];\n    \n    const siteIdPath = 'soilFER_collect/soil_description_sampling/Site_identification/site_id';\n    const siteId = raw[siteIdPath] || 'UNKNOWN_SITE';\n    const psuId = 'N/A';\n    const province = raw['soilFER_collect/soil_description_sampling/Site_identification/selected_province'] || '';\n    \n    const surveyor = raw['soilFER_collect/section0_general_Info/surveyor_name'] || raw['username'] || '';\n    const surveyDate = raw['today'] || raw['start']?.split('T')[0];\n\n    // Geolocation\n    let lat = null, lon = null, elev = null;\n    if (raw['soilFER_collect/soil_description_sampling/Site_identification/geopoint']) {\n        const parts = raw['soilFER_collect/soil_description_sampling/Site_identification/geopoint'].split(' ');\n        lat = parts[0]; lon = parts[1]; elev = parts[2];\n    } else if (raw['_geolocation']) {\n        lat = raw['_geolocation'][0]; lon = raw['_geolocation'][1];\n    }\n\n    // Classification\n    const erosionPath = 'soilFER_collect/soil_description_sampling/erosion_status';\n    const lcDescPath = `${erosionPath}/landcover_description`;\n    const level1Class = raw[`${lcDescPath}/land_cover_types`] || '';\n    \n    const components = [];\n    \n    // Comp 1\n    const domPath = `${lcDescPath}/dominant_landcover`;\n    if (raw[`${domPath}/landcover`]) {\n        const min = raw[`${domPath}/Minimum_percentage_cover_eleme`];\n        const max = raw[`${domPath}/Maximum_percentage_cover_eleme`];\n        let pct = 0;\n        if (min && max) pct = (parsePercentage(min) + parsePercentage(max)) / 2;\n        else if (max) pct = parsePercentage(max);\n        else if (min) pct = parsePercentage(min);\n        \n        let details = [];\n        Object.keys(raw).forEach(key => {\n            if (key.startsWith(domPath)) {\n               details.push(`${key.replace(domPath + '/', '')}: ${raw[key]}`);\n            }\n        });\n        \n        let classification = raw[`${domPath}/main_vegetation_type`] || raw[`${domPath}/vegetation_artificiality_001`] || '';\n        if (raw[`${domPath}/Cultivated_vegatation/basic_grains`]) classification = raw[`${domPath}/Cultivated_vegatation/basic_grains`];\n        else if (raw[`${domPath}/Cultivated_vegatation/category_001`]) classification = raw[`${domPath}/Cultivated_vegatation/category_001`];\n\n        components.push({ classification, percentage: pct, details: details.join(' | ') });\n    }\n    \n    // Comp 2\n    if (raw[`${lcDescPath}/any_secondary_veg`] === 'yes') {\n        const min = raw[`${lcDescPath}/min_perc_cover_secondary_veg`];\n        const max = raw[`${lcDescPath}/max_perc_cover_secondary_veg`];\n         let pct = 0;\n        if (min && max) pct = (parsePercentage(min) + parsePercentage(max)) / 2;\n        \n         let details = [];\n        Object.keys(raw).forEach(key => {\n            if (key.startsWith(lcDescPath) && (key.includes('secondary') || key.includes('_001'))) {\n               details.push(`${key.replace(lcDescPath + '/', '')}: ${raw[key]}`);\n            }\n        });\n        let classification = raw[`${lcDescPath}/secondary_vegetation_type`] || '';\n         if (raw[`${lcDescPath}/Cultivated_vegatation_001/basic_grains_001`]) classification = raw[`${lcDescPath}/Cultivated_vegatation_001/basic_grains_001`];\n        components.push({ classification, percentage: pct, details: details.join(' | ') });\n    }\n\n    const uniqueClasses = [...new Set([level1Class, ...components.map(c => c.classification)])].filter(Boolean);\n\n    // Photos\n    const photoRoot = 'soilFER_collect/soil_description_sampling/erosion_status/land_feature_photos';\n    const pNorth = raw[`${photoRoot}/photo_north`];\n    const pEast = raw[`${photoRoot}/photo_east`];\n    const pSouth = raw[`${photoRoot}/photo_south`];\n    const pWest = raw[`${photoRoot}/photo_west`];\n\n    // Attachments Map\n    const attachments = raw['_attachments'] || [];\n    const getUrl = (filename) => {\n        if (!filename) return '';\n        // Find attachment where filename ends with the Kobo filename\n        const att = attachments.find(a => a.filename.endsWith(filename));\n        return att ? att.download_url : '';\n    };\n\n    returnData.push({\n        json: {\n            uuid,\n            country_code: countryGroup,\n            site_id: siteId,\n            psu_id: psuId,\n            province,\n            surveyor,\n            survey_date: surveyDate,\n            submission_time: submissionTime,\n            latitude: lat, longitude: lon, elevation: elev,\n            \n            land_cover_types: level1Class,\n            unique_classifications: uniqueClasses.join(', '),\n            classification_count: uniqueClasses.length,\n            total_percentage: components.reduce((acc, c) => acc + c.percentage, 0),\n            component_count: components.length,\n            \n            comp1_classification: components[0]?.classification || '',\n            comp1_percentage: components[0]?.percentage || '',\n            comp1_details: components[0]?.details || '',\n            \n            comp2_classification: components[1]?.classification || '',\n            comp2_percentage: components[1]?.percentage || '',\n            comp2_details: components[1]?.details || '',\n            \n            comp3_classification: components[2]?.classification || '',\n            comp3_percentage: components[2]?.percentage || '',\n            comp3_details: components[2]?.details || '',\n            \n            comp4_classification: components[3]?.classification || '',\n            comp4_percentage: components[3]?.percentage || '',\n            comp4_details: components[3]?.details || '',\n\n            // Download URLs for Loop\n            download_url_north: getUrl(pNorth),\n            download_url_east: getUrl(pEast),\n            download_url_south: getUrl(pSouth),\n            download_url_west: getUrl(pWest),\n            \n            // New Filenames for Upload\n            filename_north: generateImageName(countryGroup, siteId, 'North', pNorth),\n            filename_east: generateImageName(countryGroup, siteId, 'East', pEast),\n            filename_south: generateImageName(countryGroup, siteId, 'South', pSouth),\n            filename_west: generateImageName(countryGroup, siteId, 'West', pWest),\n            \n            comments: raw['soilFER_collect/soil_description_sampling/barcode_scan/other_comments'] || '',\n            \n            // Validation Defaults\n             validation_status: 'PENDING',\n            is_correct: '',\n            final_classification: '',\n            main_crop_type: '',\n            validator_comments: '',\n            validator_name: '',\n            validation_date: '',\n            surveyor_comments: raw['soilFER_collect/soil_description_sampling/final_comments_site'] || '',\n            workflow_date: new Date().toISOString(),\n        }\n    });\n}\nreturn returnData;"
+      },
+      "id": "4bcb8e81-ebe0-4a3b-9735-70748c5f8807",
+      "name": "Process KoboToolbox Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        2688
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// PASS THROUGH NODE \n// Data is already prepared in the previous step\nreturn $input.all();"
+      },
+      "id": "5f8ce352-ced3-45de-80ea-5fde08939a51",
+      "name": "Prepare All Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        2896
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1072,
+        2896
+      ],
+      "id": "d2dc6913-788c-44ac-b3ab-a16143d94c27",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "condition-north",
+              "leftValue": "={{ $json.download_url_north }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b7f93966-176c-45ed-8d04-0c81a6513784",
+      "name": "Has North Photo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1296,
+        3104
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Loop Over Items').item.json.download_url_north }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token f166535f191d1ac07229c1ed9724d8b9481ae9e4"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "f3df52aa-713d-4416-a6d5-35a98367e04f",
+      "name": "Download Photo North",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1520,
+        3072
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://validate.soildecisions.com/api/upload",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "image",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "filename",
+              "value": "={{ $json.filename_north }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "08a4e8d4-4fcc-4671-be2c-8ce2f0dd3d3a",
+      "name": "Upload North to Server",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1744,
+        3072
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "HyFIHxVmCK1RBkyd",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "condition-south",
+              "leftValue": "={{ $json.download_url_south }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "fda88529-f5c4-4a80-9573-f9b9c53f3607",
+      "name": "Has South Photo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1296,
+        3296
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Loop Over Items').item.json.download_url_south }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token f166535f191d1ac07229c1ed9724d8b9481ae9e4"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "922d27c1-4575-4bae-a268-f4d0d0c74546",
+      "name": "Download Photo South",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1520,
+        3264
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://validate.soildecisions.com/api/upload",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "image",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "filename",
+              "value": "={{ $json.filename_south }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "09080121-81c0-415d-aada-3e968fbdd3a2",
+      "name": "Upload South to Server",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1744,
+        3264
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "HyFIHxVmCK1RBkyd",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "condition-east",
+              "leftValue": "={{ $json.download_url_east }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7f21dc97-866a-4ce0-a49e-19c1e0610228",
+      "name": "Has East Photo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1296,
+        3488
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Loop Over Items').item.json.download_url_east }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token f166535f191d1ac07229c1ed9724d8b9481ae9e4"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "9022ad7d-07af-416e-a930-2074ca045a11",
+      "name": "Download Photo East",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1520,
+        3456
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://validate.soildecisions.com/api/upload",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "image",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "filename",
+              "value": "={{ $json.filename_east }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "bc8cfcb8-b05a-4d6a-9a41-a9ab2e775860",
+      "name": "Upload East to Server",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1744,
+        3456
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "HyFIHxVmCK1RBkyd",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "condition-west",
+              "leftValue": "={{ $json.download_url_west }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4197e7fe-de91-467e-9b90-317fe8051777",
+      "name": "Has West Photo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1296,
+        3680
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Loop Over Items').item.json.download_url_west }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token f166535f191d1ac07229c1ed9724d8b9481ae9e4"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "353f5ac2-7d6b-4a3c-a554-c4018c272007",
+      "name": "Download Photo West",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1520,
+        3648
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://validate.soildecisions.com/api/upload",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "image",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "filename",
+              "value": "={{ $json.filename_west }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "eef4da91-6160-4881-ad6c-a8c6f6f23d87",
+      "name": "Upload West to Server",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1744,
+        3648
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "HyFIHxVmCK1RBkyd",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1968,
+        3344
+      ],
+      "id": "5ac7abca-e781-48b6-a153-f1f6de27de92",
+      "name": "Merge All Uploads"
+    },
+    {
+      "parameters": {
+        "jsCode": "// BUILD SHEET ROW - FIXED LOOP ITERATION\n\nconst items = $input.all();\n\n// Get the loop data from the Loop Over Items node\n// We need to access it from the execution context before the merge\nconst loopData = $('Loop Over Items').item.json;\n\n// ALTERNATIVE: If above doesn't work, get from the workflow's current batch\n// const loopData = $input.first().json;\n\nconst sheetRow = {\n  uuid: loopData.uuid,\n  country_code: loopData.country_code,\n  site_id: loopData.site_id,\n  psu_id: loopData.psu_id,\n  province: loopData.province || '',\n\n  surveyor: loopData.surveyor,\n  survey_date: loopData.survey_date,\n  submission_time: loopData.submission_time,\n\n  latitude: loopData.latitude,\n  longitude: loopData.longitude,\n  elevation: loopData.elevation,\n  landform: loopData.landform,\n\n  primary_classification: loopData.land_cover_types || 'Not Defined',\n  classification_source: loopData.classification_source || 'site_level',\n  \n  all_classifications: loopData.unique_classifications,\n  unique_classifications: loopData.unique_classifications,\n  classification_count: loopData.classification_count,\n  component_count: loopData.component_count,\n  total_coverage_percent: loopData.total_percentage,\n\n  comp1_classification: loopData.comp1_classification,\n  comp1_percentage: loopData.comp1_percentage,\n  comp1_details: loopData.comp1_details, \n\n  comp2_classification: loopData.comp2_classification,\n  comp2_percentage: loopData.comp2_percentage,\n  comp2_details: loopData.comp2_details,\n\n  comp3_classification: loopData.comp3_classification,\n  comp3_percentage: loopData.comp3_percentage,\n  comp3_details: loopData.comp3_details,\n\n  comp4_classification: loopData.comp4_classification,\n  comp4_percentage: loopData.comp4_percentage,\n  comp4_details: loopData.comp4_details,\n\n  photo_satellite: '',\n  photo_north: loopData.filename_north,\n  photo_east: loopData.filename_east,\n  photo_south: loopData.filename_south,\n  photo_west: loopData.filename_west,\n\n  validation_status: loopData.validation_status,\n  is_correct: loopData.is_correct,\n  final_classification: loopData.final_classification,\n  main_crop_type: loopData.main_crop_type,\n  validator_comments: loopData.validator_comments,\n  validator_name: loopData.validator_name,\n  validation_date: loopData.validation_date,\n  surveyor_comments: loopData.surveyor_comments,\n  \n  workflow_date: loopData.workflow_date,\n  images_uploaded: loopData.images_uploaded,\n  images_count: loopData.images_count,\n  storage_type: 'HTTP_UPLOAD'\n};\n\nreturn [{ json: sheetRow }];\n"
+      },
+      "id": "e67c339d-27e2-4bdd-832e-84de6a930766",
+      "name": "Build Sheet Row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1984,
+        3712
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1CjJmjtnN7sss7ZH1-ZzcALRPLq6VSbMx6-5mXg0HFoM/edit?usp=drive_link",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1701290838,
+          "mode": "list",
+          "cachedResultName": "LandCoverV2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1CjJmjtnN7sss7ZH1-ZzcALRPLq6VSbMx6-5mXg0HFoM/edit#gid=1701290838"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "uuid"
+          ],
+          "schema": [
+            {
+              "id": "uuid",
+              "displayName": "uuid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "country_code",
+              "displayName": "country_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "site_id",
+              "displayName": "site_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "psu_id",
+              "displayName": "psu_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "site_id_duplicated",
+              "displayName": "site_id_duplicated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "province",
+              "displayName": "province",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "surveyor",
+              "displayName": "surveyor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "survey_date",
+              "displayName": "survey_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "submission_time",
+              "displayName": "submission_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "latitude",
+              "displayName": "latitude",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "longitude",
+              "displayName": "longitude",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "elevation",
+              "displayName": "elevation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "land_cover_types",
+              "displayName": "land_cover_types",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "unique_classifications",
+              "displayName": "unique_classifications",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "classification_count",
+              "displayName": "classification_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "component_count",
+              "displayName": "component_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "total_coverage_percent",
+              "displayName": "total_coverage_percent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "comp1_classification",
+              "displayName": "comp1_classification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "comp1_percentage",
+              "displayName": "comp1_percentage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "comp1_details",
+              "displayName": "comp1_details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "comp2_classification",
+              "displayName": "comp2_classification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "comp2_percentage",
+              "displayName": "comp2_percentage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "comp2_details",
+              "displayName": "comp2_details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "comp3_classification",
+              "displayName": "comp3_classification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "comp3_percentage",
+              "displayName": "comp3_percentage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "comp3_details",
+              "displayName": "comp3_details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "comp4_classification",
+              "displayName": "comp4_classification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "comp4_percentage",
+              "displayName": "comp4_percentage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "comp4_details",
+              "displayName": "comp4_details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "photo_north",
+              "displayName": "photo_north",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "photo_east",
+              "displayName": "photo_east",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "photo_south",
+              "displayName": "photo_south",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "photo_west",
+              "displayName": "photo_west",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "validation_status",
+              "displayName": "validation_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "is_correct",
+              "displayName": "is_correct",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "final_classification",
+              "displayName": "final_classification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "main_crop_type",
+              "displayName": "main_crop_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "validator_comments",
+              "displayName": "validator_comments",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "validator_name",
+              "displayName": "validator_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "validation_date",
+              "displayName": "validation_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "surveyor_comments",
+              "displayName": "surveyor_comments",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflow_date",
+              "displayName": "workflow_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "81201684-19d8-4eb7-a42a-17e5af3a26fa",
+      "name": "Append to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2160,
+        3712
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "FUY8w7y42Z4APibm",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "placeholder-north",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "placeholder-north-name",
+              "name": "filename",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fd57d68c-99d9-4486-bdf5-d549e6a3795e",
+      "name": "No North Photo",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1744,
+        3152
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "placeholder-south",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "placeholder-south-name",
+              "name": "filename",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "dc7467bf-c401-44fc-9a98-adaa550142f4",
+      "name": "No South Photo",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1744,
+        3344
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "placeholder-east",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "placeholder-east-name",
+              "name": "filename",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fc275980-13cc-4b9b-8d0f-c0996304acd6",
+      "name": "No East Photo",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1744,
+        3536
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "placeholder-west",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "placeholder-west-name",
+              "name": "filename",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f2f82362-2051-4d70-9d84-ab953445c07d",
+      "name": "No West Photo",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1744,
+        3728
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// PROCESS DATA - Land Cover Classification Focused - HONDURAS VERSION\n// Extracts land cover data and ONLY landscape photos\n\nconst inputItem = $input.all()[0];\nif (!inputItem) return [];\n\nconst rawJson = inputItem.json;\n\nlet items = [];\nif (Array.isArray(rawJson)) {\n  items = rawJson;\n} else if (rawJson.features && Array.isArray(rawJson.features)) {\n  items = rawJson.features;\n} else if (rawJson.results && Array.isArray(rawJson.results)) {\n  items = rawJson.results;\n} else {\n  items = [rawJson];\n}\n\nconst processedItems = [];\n\nfor (const row of items) {\n  let data = row;\n  let geometry = null;\n  if (row.type === 'Feature' && row.properties) {\n    data = row.properties;\n    geometry = row.geometry;\n  }\n\n  const uuid = data._uuid || data['formhub/uuid'] || '';\n  const submission_time = data._submission_time || null;\n  const today = data.today || null;\n  const surveyor = data['soilFER_collect/section0_general_Info/surveyor_name'] || data.username || 'unknown';\n\n  // HONDURAS-SPECIFIC: Extract site_id and psu_id\n  // Honduras format: psu = \"472\", site_id = \"HND47221\"\n  // We need: psu_id = \"HND472\" (country code + psu number)\n  const site_id = data['soilFER_collect/soil_description_sampling/Site_identification/site_id'] || '';\n  const raw_psu = data['soilFER_collect/soil_description_sampling/Site_identification/psu'] || '';\n  \n  // Extract country code from site_id (first 3 letters: HND, GTM, etc.)\n  const country_code = site_id.substring(0, 3); // \"HND\"\n  \n  // Build psu_id as country_code + raw_psu\n  const psu_id = raw_psu ? `${country_code}${raw_psu}` : '';\n  // Example: psu_id = \"HND472\"\n\n  const province = data['soilFER_collect/soil_description_sampling/Site_identification/selected_province'] || '';\n\n  let geopoint = data['soilFER_collect/soil_description_sampling/Site_identification/geopoint'];\n  if (!geopoint && geometry && geometry.coordinates) {\n    geopoint = `${geometry.coordinates[1]} ${geometry.coordinates[0]}`;\n  }\n\n  const landform = data['soilFER_collect/landscape_description/landform_classification'] || '';\n\n  const lc_photo_north = data['soilFER_collect/landscape_description/land_feature_photos/photo_north'] || '';\n  const lc_photo_east = data['soilFER_collect/landscape_description/land_feature_photos/photo_east'] || '';\n  const lc_photo_south = data['soilFER_collect/landscape_description/land_feature_photos/photo_south'] || '';\n  const lc_photo_west = data['soilFER_collect/landscape_description/land_feature_photos/photo_west'] || '';\n\n  const landcoverArr = data['soilFER_collect/landcover_description'] || [];\n  const classificationsFromArray = [];\n\n  if (Array.isArray(landcoverArr) && landcoverArr.length > 0) {\n    landcoverArr.forEach((component, idx) => {\n      const prefix = 'soilFER_collect/landcover_description/dominant_landcover/';\n      const classification = component[`${prefix}land_cover_types`];\n      if (classification) {\n        classificationsFromArray.push({\n          source: 'component_array',\n          component_number: idx + 1,\n          classification: classification,\n          percentage: parseFloat(component[`${prefix}Maximum`] || 0)\n        });\n      }\n    });\n  }\n\n  const siteLevelClassification = data['soilFER_collect/group_we8pb85/land_cover_types'];\n  const classificationsFromSiteLevel = [];\n\n  if (siteLevelClassification) {\n    const classificationValue = Array.isArray(siteLevelClassification)\n      ? siteLevelClassification\n      : [siteLevelClassification];\n\n    classificationValue.forEach(cls => {\n      if (cls) {\n        classificationsFromSiteLevel.push({\n          source: 'site_level',\n          component_number: null,\n          classification: cls,\n          percentage: null\n        });\n      }\n    });\n  }\n\n  const all_land_cover_classifications = [\n    ...classificationsFromArray,\n    ...classificationsFromSiteLevel\n  ];\n\n  let primary_land_cover_classification = '';\n  let classification_source = '';\n\n  if (classificationsFromSiteLevel.length > 0) {\n    primary_land_cover_classification = classificationsFromSiteLevel[0].classification;\n    classification_source = 'site_level';\n  } else if (classificationsFromArray.length > 0) {\n    primary_land_cover_classification = classificationsFromArray[0].classification;\n    classification_source = 'component_array';\n  }\n\n  const unique_classifications = [...new Set(all_land_cover_classifications.map(c => c.classification))];\n\n  const landcover_description = (landcoverArr || []).map((component, idx) => {\n    const prefix = 'soilFER_collect/landcover_description/dominant_landcover/';\n    return {\n      component_number: idx + 1,\n      landcover: component[`${prefix}landcover`] || '',\n      percentage: parseFloat(component[`${prefix}Maximum`] || 0),\n      classification: component[`${prefix}land_cover_types`] || '',\n      artificiality: component[`${prefix}group_mz57q81/vegetation_artificiality_001`] || '',\n      veg_type: component[`${prefix}group_mz57q81/Cultivated_vegatation/main_vegetation_type`] || '',\n      category: component[`${prefix}group_mz57q81/Cultivated_vegatation/category_001`] || '',\n      basic_grains: component[`${prefix}group_mz57q81/Cultivated_vegatation/basic_grains`] || '',\n      crops_shrubs: component[`${prefix}group_mz57q81/Cultivated_vegatation/crops_shrubs`] || '',\n      natural_pastures: component[`${prefix}group_mz57q81/Cultivated_vegatation/natural_pastures`] || '',\n      season: component[`${prefix}group_mz57q81/Cultivated_vegatation/season`] || '',\n      frequency: component[`${prefix}group_mz57q81/Cultivated_vegatation/frequency`] || '',\n      water_supply: component[`${prefix}group_mz57q81/Cultivated_vegatation/water_supply`] || ''\n    };\n  });\n\n  const total_percentage = parseFloat(data['soilFER_collect/Total_Percentage'] || 0);\n  const comments = data['soilFER_collect/group_we8pb85/final_comments_site'] || '';\n\n  const attachments = data._attachments || [];\n  const lc_photo_attachments = attachments.filter(att => {\n    const xpath = att.question_xpath || '';\n    return xpath.includes('landscape_description') &&\n           xpath.includes('land_feature_photos') &&\n           !xpath.includes('land_feature_photos_001');\n  });\n\n  const has_lc_photo_north = !!lc_photo_north;\n  const has_lc_photo_east = !!lc_photo_east;\n  const has_lc_photo_south = !!lc_photo_south;\n  const has_lc_photo_west = !!lc_photo_west;\n\n  processedItems.push({\n    json: {\n      uuid,\n      submission_time,\n      surveyor,\n      today,\n      site_id,\n      psu_id,\n      province,\n      geopoint,\n      landform,\n      primary_land_cover_classification,\n      classification_source,\n      all_land_cover_classifications,\n      unique_classifications,\n      classification_count: all_land_cover_classifications.length,\n      total_percentage,\n      landcover_description,\n      lc_photo_north,\n      lc_photo_east,\n      lc_photo_south,\n      lc_photo_west,\n      has_lc_photo_north,\n      has_lc_photo_east,\n      has_lc_photo_south,\n      has_lc_photo_west,\n      lc_attachments: lc_photo_attachments,\n      comments\n    }\n  });\n}\n\nreturn processedItems;\n"
+      },
+      "id": "a6f51a6a-9d05-482d-8150-1bf5617f3079",
+      "name": "Process KoboToolbox Data1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        2496
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// GTM COMPREHENSIVE TRANSFORMATION - Handles ALL data structure variations\n// Supports: 1) Array-based landcover (1578 records), 2) Flat landcover (8 records)\n// Photo paths: landscape_description (majority) and erosion_status (minority)\n\nfunction parsePercentage(value) {\n    if (!value) return 0;\n    const str = String(value);\n    if (str.includes('_')) {\n        const parts = str.split('_').map(Number);\n        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {\n            // Return MAX value, not average\n            return parts[1];\n        }\n    }\n    const num = parseFloat(str);\n    return isNaN(num) ? 0 : num;\n}\n\nfunction generateImageName(uuid, aspect, originalFilename) {\n    if (!originalFilename) return '';\n    // Extract UUID without 'uuid:' prefix if present\n    const cleanUuid = uuid.replace('uuid:', '');\n    return `${cleanUuid}-${aspect.toLowerCase()}.jpg`;\n}\n\nconst inputItem = $input.all()[0];\nif (!inputItem) return [];\n\nconst rawJson = inputItem.json;\n\nlet items = [];\nif (rawJson.results && Array.isArray(rawJson.results)) {\n    items = rawJson.results;\n} else if (Array.isArray(rawJson)) {\n    items = rawJson;\n} else {\n    items = [rawJson];\n}\n\nconst processedItems = [];\n\nfor (const data of items) {\n    const uuid = data['meta/instanceID'] || data['_uuid'];\n    const countryCode = 'GTM';\n    const submissionTime = data['_submission_time'];\n\n    const siteId = data['soilFER_collect/soil_description_sampling/Site_identification/site_id'] || 'UNKNOWN_SITE';\n    const psuId = siteId ? siteId.split(/[-_]/)[0] : 'N/A';\n    const province = data['soilFER_collect/soil_description_sampling/Site_identification/selected_province'] || '';\n\n    const surveyor = data['soilFER_collect/section0_general_Info/surveyor_name'] || data['username'] || '';\n    const surveyDate = data['today'] || data['start']?.split('T')[0];\n\n    let lat = null, lon = null, elev = null;\n    const geopointStr = data['soilFER_collect/soil_description_sampling/Site_identification/geopoint'];\n    if (geopointStr) {\n        const parts = geopointStr.split(' ');\n        lat = parts[0];\n        lon = parts[1];\n        elev = parts[2];\n    } else if (data['_geolocation']) {\n        lat = data['_geolocation'][0];\n        lon = data['_geolocation'][1];\n    }\n\n    // Landform - try both paths\n    let landform = data['soilFER_collect/landscape_description/landform_classification'] ||\n                   data['soilFER_collect/soil_description_sampling/erosion_status/landscape_description/landform_classification'] || '';\n\n    // DETECT STRUCTURE: Array-based or Flat\n    const landcoverArr = data['soilFER_collect/landcover_description'];\n    const isArrayBased = Array.isArray(landcoverArr) && landcoverArr.length > 0;\n\n    let level1Class = '';\n    const components = [];\n\n    if (isArrayBased) {\n        // === ARRAY-BASED STRUCTURE (majority: 1578 records) ===\n        // Level 1 classification from last array item or site level\n        const lastComponent = landcoverArr[landcoverArr.length - 1];\n        const prefix = 'soilFER_collect/landcover_description/dominant_landcover/';\n        level1Class = lastComponent[`${prefix}land_cover_types`] ||\n                      data['soilFER_collect/group_we8pb85/land_cover_types'] || '';\n\n        // Process each component in array\n        landcoverArr.forEach((component, idx) => {\n            const cultivatedPrefix = `${prefix}group_mz57q81/Cultivated_vegatation/`;\n\n            const landcover = component[`${prefix}landcover`] || '';\n            const maximum = component[`${prefix}Maximum`];\n            const pct = parseFloat(maximum) || 0;\n\n            // Build details\n            const details = [];\n\n            // Vegetated fields\n            const mainVegType = component[`${cultivatedPrefix}main_vegetation_type`];\n            const artificiality = component[`${prefix}group_mz57q81/vegetation_artificiality_001`];\n            const category = component[`${cultivatedPrefix}category_001`];\n\n            // Non-vegetated fields\n            const artificialSurfacesGroup = `${prefix}artificial_surfaces_group/`;\n            const nonVegArea = component[`${artificialSurfacesGroup}Non_vegetated_area`];\n            const nonVegOffSeasonType = component[`${artificialSurfacesGroup}off_season_type`];\n\n            // Get crop detail based on category\n            let cropDetail = '';\n            if (category === 'basic_grains') {\n                cropDetail = component[`${cultivatedPrefix}basic_grains`];\n            } else if (category === 'crops_shrubs') {\n                cropDetail = component[`${cultivatedPrefix}crops_shrubs`];\n            } else if (category === 'crops_trees') {\n                cropDetail = component[`${cultivatedPrefix}crops_trees`];\n            } else if (category === 'crops_annual') {\n                cropDetail = component[`${cultivatedPrefix}crops_annual`];\n                if (cropDetail === 'other') {\n                    cropDetail = component[`${cultivatedPrefix}other_crops_annual`] || 'other';\n                }\n            } else if (category === 'natural_pastures') {\n                cropDetail = component[`${cultivatedPrefix}natural_pastures`];\n            }\n\n            const season = component[`${cultivatedPrefix}season`];\n            const onSeasonType = component[`${cultivatedPrefix}on_season_type`];\n            const vegOffSeasonType = component[`${cultivatedPrefix}off_season_type`];\n            const frequency = component[`${cultivatedPrefix}frequency`];\n            const waterSupply = component[`${cultivatedPrefix}water_supply`];\n\n            if (landcover) details.push(`landcover: ${landcover}`);\n            if (mainVegType) details.push(`veg_type: ${mainVegType}`);\n            if (artificiality) details.push(`artificiality: ${artificiality}`);\n            if (category) details.push(`category: ${category}`);\n            if (cropDetail) details.push(`crop: ${cropDetail}`);\n            if (season) details.push(`season: ${season}`);\n            if (onSeasonType) details.push(`on_season_type: ${onSeasonType}`);\n            if (vegOffSeasonType) details.push(`off_season_type: ${vegOffSeasonType}`);\n            if (frequency) details.push(`frequency: ${frequency}`);\n            if (waterSupply) details.push(`water: ${waterSupply}`);\n            // Non-vegetated specific fields\n            if (nonVegArea) details.push(`area_type: ${nonVegArea}`);\n            if (nonVegOffSeasonType) details.push(`nonveg_off_season_type: ${nonVegOffSeasonType}`);\n\n            // Classification: landcover type (vegetated/non-vegetated)\n            let classification = landcover;\n\n            components.push({\n                classification,\n                percentage: pct,\n                details: details.join(' | ')\n            });\n        });\n\n    } else {\n        // === FLAT STRUCTURE (minority: ~8 records) ===\n        const lcPath = 'soilFER_collect/soil_description_sampling/erosion_status/landcover_description';\n        level1Class = data[`${lcPath}/land_cover_types`] || '';\n\n        const domPath = `${lcPath}/dominant_landcover`;\n        const domLandcover = data[`${domPath}/landcover`];\n\n        if (domLandcover) {\n            const min = data[`${domPath}/Minimum_percentage_cover_eleme`];\n            const max = data[`${domPath}/Maximum_percentage_cover_eleme`];\n            const pct = parsePercentage(max) || parsePercentage(min) || 0;\n\n            const details = [];\n            const mainVegType = data[`${domPath}/main_vegetation_type`];\n            const artificiality = data[`${domPath}/vegetation_artificiality_001`];\n            const category = data[`${domPath}/Cultivated_vegatation/category_001`];\n            const basicGrains = data[`${domPath}/Cultivated_vegatation/basic_grains`];\n            const season = data[`${domPath}/Cultivated_vegatation/season`];\n            const frequency = data[`${domPath}/Cultivated_vegatation/frequency`];\n            const waterSupply = data[`${domPath}/Cultivated_vegatation/water_supply`];\n\n            if (domLandcover) details.push(`landcover: ${domLandcover}`);\n            if (mainVegType) details.push(`veg_type: ${mainVegType}`);\n            if (artificiality) details.push(`artificiality: ${artificiality}`);\n            if (category) details.push(`category: ${category}`);\n            if (basicGrains) details.push(`crop: ${basicGrains}`);\n            if (season) details.push(`season: ${season}`);\n            if (frequency) details.push(`frequency: ${frequency}`);\n            if (waterSupply) details.push(`water: ${waterSupply}`);\n\n            let classification = domLandcover;\n\n            components.push({\n                classification,\n                percentage: pct,\n                details: details.join(' | ')\n            });\n        }\n\n        // Secondary component (flat structure only)\n        const hasSecondary = data[`${lcPath}/any_secondary_veg`];\n        if (hasSecondary === 'yes') {\n            const minSec = data[`${lcPath}/min_perc_cover_secondary_veg`];\n            const maxSec = data[`${lcPath}/max_perc_cover_secondary_veg`];\n            const pctSec = parsePercentage(maxSec) || parsePercentage(minSec) || 0;\n\n            const secVegType = data[`${lcPath}/secondary_vegetation_type`] || 'Secondary';\n            components.push({\n                classification: 'vegetated',\n                percentage: pctSec,\n                details: `secondary veg_type: ${secVegType}`\n            });\n        }\n    }\n\n    const uniqueClasses = [level1Class].filter(Boolean);\n    const totalPercentage = components.reduce((acc, c) => acc + c.percentage, 0);\n\n    // Photos - try both paths\n    let photoPath = 'soilFER_collect/landscape_description/land_feature_photos';\n    let pNorth = data[`${photoPath}/photo_north`];\n    let pEast = data[`${photoPath}/photo_east`];\n    let pSouth = data[`${photoPath}/photo_south`];\n    let pWest = data[`${photoPath}/photo_west`];\n\n    if (!pNorth && !pEast && !pSouth && !pWest) {\n        // Try erosion_status path\n        photoPath = 'soilFER_collect/soil_description_sampling/erosion_status/land_feature_photos';\n        pNorth = data[`${photoPath}/photo_north`];\n        pEast = data[`${photoPath}/photo_east`];\n        pSouth = data[`${photoPath}/photo_south`];\n        pWest = data[`${photoPath}/photo_west`];\n    }\n\n    const attachments = data['_attachments'] || [];\n    const getUrl = (direction) => {\n        const xpath = `${photoPath}/photo_${direction}`;\n        const att = attachments.find(a => a.question_xpath && a.question_xpath === xpath);\n        if (!att || !att.download_url) return '';\n\n        // Remove ?format=json parameter to get actual file\n        // KoboToolbox URLs like: .../attachments/123/?format=json\n        // Need to become: .../attachments/123/\n        return att.download_url.replace(/\\?format=json$/i, '');\n    };\n\n    const comments = data['soilFER_collect/soil_description_sampling/barcode_scan/other_comments'] || '';\n    const surveyorComments = data['soilFER_collect/soil_description_sampling/final_comments_site'] ||\n                            data['soilFER_collect/group_we8pb85/final_comments_site'] || '';\n\n    processedItems.push({\n        json: {\n            uuid,\n            country_code: countryCode,\n            site_id: siteId,\n            psu_id: psuId,\n            province,\n            surveyor,\n            survey_date: surveyDate,\n            submission_time: submissionTime,\n            latitude: lat,\n            longitude: lon,\n            elevation: elev,\n            landform,\n\n            land_cover_types: level1Class,\n            unique_classifications: uniqueClasses.join(', '),\n            classification_count: uniqueClasses.length,\n            total_percentage: totalPercentage,\n            component_count: components.length,\n\n            comp1_classification: components[0]?.classification || '',\n            comp1_percentage: components[0]?.percentage || '',\n            comp1_details: components[0]?.details || '',\n\n            comp2_classification: components[1]?.classification || '',\n            comp2_percentage: components[1]?.percentage || '',\n            comp2_details: components[1]?.details || '',\n\n            comp3_classification: components[2]?.classification || '',\n            comp3_percentage: components[2]?.percentage || '',\n            comp3_details: components[2]?.details || '',\n\n            comp4_classification: components[3]?.classification || '',\n            comp4_percentage: components[3]?.percentage || '',\n            comp4_details: components[3]?.details || '',\n\n            download_url_north: getUrl('north'),\n            download_url_east: getUrl('east'),\n            download_url_south: getUrl('south'),\n            download_url_west: getUrl('west'),\n\n            filename_north: generateImageName(uuid, 'North', pNorth),\n            filename_east: generateImageName(uuid, 'East', pEast),\n            filename_south: generateImageName(uuid, 'South', pSouth),\n            filename_west: generateImageName(uuid, 'West', pWest),\n\n            comments,\n\n            validation_status: 'PENDING',\n            is_correct: '',\n            final_classification: '',\n            main_crop_type: '',\n            validator_comments: '',\n            validator_name: '',\n            validation_date: '',\n            surveyor_comments: surveyorComments,\n            workflow_date: new Date().toISOString()\n        }\n    });\n}\n\nreturn processedItems;\n"
+      },
+      "id": "bc35226c-d7be-44e1-9387-49515b03c8a6",
+      "name": "Process KoboToolbox Data2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        2336
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// PROCESS DATA - ZAMBIA - FLAT OUTPUT FOR GOOGLE SHEET (66 columns)\n// Outputs flat JSON structure matching Guatemala baseline schema\n// Handles both Array and Flat landcover_description structures\n// Maps to 66-column Google Sheet: Columns A-BJ\n\nconst inputItem = $input.all()[0];\nif (!inputItem) return [];\n\nconst rawJson = inputItem.json;\n\nlet items = [];\nif (Array.isArray(rawJson)) {\n  items = rawJson;\n} else if (rawJson.features && Array.isArray(rawJson.features)) {\n  items = rawJson.features;\n} else if (rawJson.results && Array.isArray(rawJson.results)) {\n  items = rawJson.results;\n} else {\n  items = [rawJson];\n}\n\nconst processedItems = [];\n\n// Helper function to convert percentage range to maximum value\nfunction parsePercentageRange(rangeStr) {\n  if (!rangeStr) return null;\n  if (typeof rangeStr === 'number') return rangeStr;\n\n  const str = String(rangeStr);\n  if (str.includes('_')) {\n    const parts = str.split('_');\n    return parseFloat(parts[1]) || null;\n  }\n  return parseFloat(str) || null;\n}\n\n// Helper function to parse geopoint into latitude, longitude, elevation\nfunction parseGeopoint(geopointStr) {\n  if (!geopointStr) return { latitude: null, longitude: null, elevation: null };\n\n  const parts = String(geopointStr).trim().split(/\\s+/);\n  return {\n    latitude: parts[0] ? parseFloat(parts[0]) : null,\n    longitude: parts[1] ? parseFloat(parts[1]) : null,\n    elevation: parts[2] ? parseFloat(parts[2]) : null\n  };\n}\n\nfor (const row of items) {\n  let data = row;\n  let geometry = null;\n  if (row.type === 'Feature' && row.properties) {\n    data = row.properties;\n    geometry = row.geometry;\n  }\n\n  // ========== METADATA FIELDS ==========\n  const uuid = data._uuid || data['formhub/uuid'] || '';\n  const submission_time = data._submission_time || '';\n  const today = data.today || '';\n  const surveyor = data['soilFER_collect/section0_general_Info/surveyor_name'] || data.username || '';\n\n  const site_id = data['soilFER_collect/soil_description_sampling/Site_identification/site_id'] || '';\n  const psu_id = site_id ? site_id.split(/[-_]/)[0] : '';\n  const province = data['soilFER_collect/soil_description_sampling/Site_identification/selected_province'] || '';\n  const country_code = site_id ? site_id.substring(0, 3).toUpperCase() : 'ZMB';\n\n  // Parse geopoint\n  let geopointStr = data['soilFER_collect/soil_description_sampling/Site_identification/geopoint'];\n  if (!geopointStr && geometry && geometry.coordinates) {\n    geopointStr = `${geometry.coordinates[1]} ${geometry.coordinates[0]}`;\n  }\n  const { latitude, longitude, elevation } = parseGeopoint(geopointStr);\n\n  const landform = data['soilFER_collect/soil_description_sampling/erosion_status/landscape_description/landform_classification'] || '';\n\n  // Photo fields\n  const lc_photo_north = data['soilFER_collect/soil_description_sampling/erosion_status/land_feature_photos/photo_north'] || '';\n  const lc_photo_east = data['soilFER_collect/soil_description_sampling/erosion_status/land_feature_photos/photo_east'] || '';\n  const lc_photo_south = data['soilFER_collect/soil_description_sampling/erosion_status/land_feature_photos/photo_south'] || '';\n  const lc_photo_west = data['soilFER_collect/soil_description_sampling/erosion_status/land_feature_photos/photo_west'] || '';\n\n  const comments = data['soilFER_collect/soil_description_sampling/barcode_scan/other_comments'] || '';\n\n  // ========== DETECT FORMAT & EXTRACT COMPONENTS ==========\n  const landcover_array = data['soilFER_collect/soil_description_sampling/erosion_status/landcover_description'];\n  const isArrayFormat = Array.isArray(landcover_array);\n\n  let primary_classification = '';\n  let components = []; // Will hold up to 3 components\n\n  if (isArrayFormat) {\n    // ========== ARRAY FORMAT ==========\n    if (landcover_array.length > 0) {\n      primary_classification = landcover_array[0]['soilFER_collect/soil_description_sampling/erosion_status/landcover_description/land_cover_types'] || '';\n    }\n\n    for (let i = 0; i < Math.min(3, landcover_array.length); i++) {\n      const lc_item = landcover_array[i];\n\n      const lcPrefix = 'soilFER_collect/soil_description_sampling/erosion_status/landcover_description/dominant_landcover/';\n      const cultivatedPrefix = `${lcPrefix}cultivated_arable_land_group/`;\n\n      const landcover = lc_item[`${lcPrefix}landcover`] || '';\n      const vegetation_artificiality = lc_item[`${cultivatedPrefix}vegetation_artificiality_001`] || '';\n      const category = lc_item[`${cultivatedPrefix}category_001`] || '';\n      const season = lc_item[`${cultivatedPrefix}season`] || '';\n      const frequency = lc_item[`${cultivatedPrefix}frequency`] || '';\n      const water_supply = lc_item[`${cultivatedPrefix}water_supply`] || '';\n      const classification = lc_item['soilFER_collect/soil_description_sampling/erosion_status/landcover_description/land_cover_types'] || '';\n      const main_veg_type = lc_item[`${cultivatedPrefix}main_vegetation_type`] || '';\n\n      const max_percentage_field = lc_item[`${cultivatedPrefix}Maximum`];\n      const comp_percentage = parsePercentageRange(max_percentage_field);\n\n      let crop_detail = '';\n      if (vegetation_artificiality === 'cultivated' && category) {\n        if (category === 'cereal_crops') {\n          crop_detail = lc_item[`${cultivatedPrefix}cereal_crops`] || '';\n        } else if (category === 'legumes') {\n          crop_detail = lc_item[`${cultivatedPrefix}legumes`] || '';\n        } else if (category === 'root_tuber_crops') {\n          crop_detail = lc_item[`${cultivatedPrefix}root_tuber_crops`] || '';\n        } else if (category === 'vegetables') {\n          crop_detail = lc_item[`${cultivatedPrefix}vegetables`] || '';\n        } else if (category === 'fruits') {\n          crop_detail = lc_item[`${cultivatedPrefix}fruits`] || '';\n        } else if (category === 'other_crops' || category === 'other') {\n          crop_detail = lc_item[`${cultivatedPrefix}other_crops`] || lc_item[`${cultivatedPrefix}other`] || '';\n        }\n      }\n\n      components.push({\n        landcover: landcover,\n        percentage: comp_percentage,\n        classification: classification,\n        artificiality: vegetation_artificiality,\n        veg_type: main_veg_type,\n        category: category,\n        crop_detail: crop_detail,\n        season: season,\n        frequency: frequency,\n        water_supply: water_supply\n      });\n    }\n\n  } else {\n    // ========== FLAT FORMAT ==========\n    const lcDescPrefix = 'soilFER_collect/soil_description_sampling/erosion_status/landcover_description/';\n    const lcDomPrefix = `${lcDescPrefix}dominant_landcover/`;\n    const cultivatedPrefix = `${lcDomPrefix}cultivated_arable_land_group/`;\n\n    primary_classification = data[`${lcDescPrefix}land_cover_types`] || '';\n\n    const landcover = data[`${lcDomPrefix}landcover`] || '';\n\n    // Check both paths for vegetation_artificiality\n    const vegetation_artificiality = data[`${lcDomPrefix}vegetation_artificiality_001`] ||\n                                     data[`${cultivatedPrefix}vegetation_artificiality`] || '';\n\n    const category = data[`${cultivatedPrefix}category`] || '';\n    const season = data[`${cultivatedPrefix}season`] || '';\n    const frequency = data[`${cultivatedPrefix}frequency`] || '';\n    const water_supply = data[`${cultivatedPrefix}water_supply`] || '';\n\n    // Component 1: Main vegetation type\n    const main_veg_type = data[`${lcDomPrefix}main_vegetation_type`] ||\n                         data[`${cultivatedPrefix}main_vegetation_type`] || '';\n\n    if (main_veg_type) {\n      let max_percentage_field = '';\n\n      // Try Format 4 generic field\n      max_percentage_field = data[`${lcDomPrefix}Maximum_percentage_cover_eleme`];\n\n      // Fallback to vegetation-specific fields\n      if (!max_percentage_field) {\n        if (main_veg_type === 'herbaceous') {\n          max_percentage_field = data[`${cultivatedPrefix}Maximum_percentage_cover_herb`];\n        } else if (main_veg_type === 'schrubs' || main_veg_type === 'shrubs') {\n          max_percentage_field = data[`${cultivatedPrefix}Maximum_percentage_cover_shrub`];\n        } else if (main_veg_type === 'trees') {\n          max_percentage_field = data[`${cultivatedPrefix}Maximum_percentage_cover_tree`];\n        }\n      }\n\n      const comp1_percentage = parsePercentageRange(max_percentage_field);\n\n      let crop_detail = '';\n      if (vegetation_artificiality === 'cultivated' && category) {\n        if (category === 'cereal_crops') {\n          crop_detail = data[`${cultivatedPrefix}cereal_crops`] || '';\n        } else if (category === 'legumes') {\n          crop_detail = data[`${cultivatedPrefix}legumes`] || '';\n        } else if (category === 'root_tuber_crops') {\n          crop_detail = data[`${cultivatedPrefix}root_tuber_crops`] || '';\n        } else if (category === 'vegetables') {\n          crop_detail = data[`${cultivatedPrefix}vegetables`] || '';\n        } else if (category === 'fruits') {\n          crop_detail = data[`${cultivatedPrefix}fruits`] || '';\n        } else if (category === 'other_crops' || category === 'other') {\n          crop_detail = data[`${cultivatedPrefix}other_crops`] || data[`${cultivatedPrefix}other`] || '';\n        }\n      }\n\n      components.push({\n        landcover: landcover,\n        percentage: comp1_percentage,\n        classification: primary_classification,\n        artificiality: vegetation_artificiality,\n        veg_type: main_veg_type,\n        category: category,\n        crop_detail: crop_detail,\n        season: season,\n        frequency: frequency,\n        water_supply: water_supply\n      });\n    }\n\n    // Component 2: Secondary vegetation\n    const any_secondary_veg = data[`${lcDescPrefix}any_secondary_veg`] ||\n                              data[`${cultivatedPrefix}any_secondary_veg`];\n\n    if (any_secondary_veg === 'yes') {\n      const secondary_veg_type = data[`${lcDescPrefix}secondary_vegetation_type`] ||\n                                 data[`${cultivatedPrefix}secondary_vegetation_type`] || '';\n\n      let max_percentage_field_sec = '';\n      max_percentage_field_sec = data[`${lcDescPrefix}max_perc_cover_secondary_veg`];\n\n      if (!max_percentage_field_sec) {\n        if (secondary_veg_type === 'herbaceous') {\n          max_percentage_field_sec = data[`${cultivatedPrefix}max_perc_cover_secondary_herb`];\n        } else if (secondary_veg_type === 'schrubs' || secondary_veg_type === 'shrubs') {\n          max_percentage_field_sec = data[`${cultivatedPrefix}max_perc_cover_secondary_shrub`];\n        } else if (secondary_veg_type === 'trees') {\n          max_percentage_field_sec = data[`${cultivatedPrefix}max_perc_cover_secondary_tree`];\n        }\n      }\n\n      const comp2_percentage = parsePercentageRange(max_percentage_field_sec);\n\n      components.push({\n        landcover: data[`${lcDescPrefix}landcover_001`] || landcover,\n        percentage: comp2_percentage,\n        classification: primary_classification,\n        artificiality: data[`${lcDescPrefix}vegetation_artificiality_001_001`] || vegetation_artificiality,\n        veg_type: secondary_veg_type,\n        category: '',\n        crop_detail: '',\n        season: '',\n        frequency: '',\n        water_supply: ''\n      });\n    }\n\n    // Component 3: Third vegetation\n    const any_third_veg = data[`${lcDescPrefix}any_third_veg`] ||\n                          data[`${cultivatedPrefix}any_third_veg`];\n\n    if (any_third_veg === 'yes') {\n      const third_veg_type = data[`${lcDescPrefix}third_vegetation_type`] ||\n                            data[`${cultivatedPrefix}third_vegetation_type`] || '';\n\n      let max_percentage_field_third = '';\n      max_percentage_field_third = data[`${lcDescPrefix}max_perc_cover_third_veg`];\n\n      if (!max_percentage_field_third) {\n        if (third_veg_type === 'herbaceous') {\n          max_percentage_field_third = data[`${cultivatedPrefix}max_perc_cover_third_herb`];\n        } else if (third_veg_type === 'schrubs' || third_veg_type === 'shrubs') {\n          max_percentage_field_third = data[`${cultivatedPrefix}max_perc_cover_third_shrub`];\n        } else if (third_veg_type === 'trees') {\n          max_percentage_field_third = data[`${cultivatedPrefix}max_perc_cover_third_tree`];\n        }\n      }\n\n      const comp3_percentage = parsePercentageRange(max_percentage_field_third);\n\n      components.push({\n        landcover: landcover,\n        percentage: comp3_percentage,\n        classification: primary_classification,\n        artificiality: vegetation_artificiality,\n        veg_type: third_veg_type,\n        category: '',\n        crop_detail: '',\n        season: '',\n        frequency: '',\n        water_supply: ''\n      });\n    }\n  }\n\n  // ========== BUILD FLAT OUTPUT (66 COLUMNS) ==========\n  // Following Guatemala baseline schema\n\n  const comp1 = components[0] || {};\n  const comp2 = components[1] || {};\n  const comp3 = components[2] || {};\n\n  const flatOutput = {\n    // Metadata (Columns A-J)\n    uuid: uuid,\n    country_code: country_code,\n    submission_time: submission_time,\n    surveyor: surveyor,\n    today: today,\n    site_id: site_id,\n    psu_id: psu_id,\n    province: province,\n    latitude: latitude,\n    longitude: longitude,\n    elevation: elevation,\n\n    // Site description (Columns K-M)\n    landform: landform,\n    primary_classification: primary_classification,\n    total_percentage: (comp1.percentage || 0) + (comp2.percentage || 0) + (comp3.percentage || 0),\n\n    // Component 1 (Columns N-W)\n    comp1_landcover: comp1.landcover || '',\n    comp1_percentage: comp1.percentage,\n    comp1_classification: comp1.classification || '',\n    comp1_artificiality: comp1.artificiality || '',\n    comp1_veg_type: comp1.veg_type || '',\n    comp1_category: comp1.category || '',\n    comp1_crop_detail: comp1.crop_detail || '',\n    comp1_season: comp1.season || '',\n    comp1_frequency: comp1.frequency || '',\n    comp1_water_supply: comp1.water_supply || '',\n\n    // Component 2 (Columns X-AG)\n    comp2_landcover: comp2.landcover || '',\n    comp2_percentage: comp2.percentage,\n    comp2_classification: comp2.classification || '',\n    comp2_artificiality: comp2.artificiality || '',\n    comp2_veg_type: comp2.veg_type || '',\n    comp2_category: comp2.category || '',\n    comp2_crop_detail: comp2.crop_detail || '',\n    comp2_season: comp2.season || '',\n    comp2_frequency: comp2.frequency || '',\n    comp2_water_supply: comp2.water_supply || '',\n\n    // Component 3 (Columns AH-AQ)\n    comp3_landcover: comp3.landcover || '',\n    comp3_percentage: comp3.percentage,\n    comp3_classification: comp3.classification || '',\n    comp3_artificiality: comp3.artificiality || '',\n    comp3_veg_type: comp3.veg_type || '',\n    comp3_category: comp3.category || '',\n    comp3_crop_detail: comp3.crop_detail || '',\n    comp3_season: comp3.season || '',\n    comp3_frequency: comp3.frequency || '',\n    comp3_water_supply: comp3.water_supply || '',\n\n    // Photos (Columns AR-AU)\n    lc_photo_north: lc_photo_north,\n    lc_photo_east: lc_photo_east,\n    lc_photo_south: lc_photo_south,\n    lc_photo_west: lc_photo_west,\n\n    // Has photo flags (Columns AV-AY)\n    has_lc_photo_north: !!lc_photo_north,\n    has_lc_photo_east: !!lc_photo_east,\n    has_lc_photo_south: !!lc_photo_south,\n    has_lc_photo_west: !!lc_photo_west,\n\n    // Comments (Column AZ+)\n    comments: comments\n  };\n\n  processedItems.push({\n    json: flatOutput\n  });\n}\n\nreturn processedItems;\n"
+      },
+      "id": "fc4cf30c-fed6-48d8-9b76-b3d8e65f45e7",
+      "name": "Process KoboToolbox Data3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        2160
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "https://kf.soilfer-data.fao.org/api/v2/assets/aKDDwLku3FEU3hHyC8sHUt/data/",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "query",
+              "value": "={{ JSON.stringify({ \"_submission_time\": { \"$gte\": $today.minus({days: 2500}).format('yyyy-MM-dd') } }) }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token f166535f191d1ac07229c1ed9724d8b9481ae9e4"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1405543e-df74-49f1-b39a-df00004dd517",
+      "name": "Get Kobo Data MOZ",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -144,
+        2688
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "https://kf.soilfer-data.fao.org/api/v2/assets/akt25hEErmCj2G9LBhs4sS/data/",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "query",
+              "value": "={{ JSON.stringify({ \"_submission_time\": { \"$gte\": $today.minus({days: 1000}).format('yyyy-MM-dd') } }) }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token f166535f191d1ac07229c1ed9724d8b9481ae9e4"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "04f651f3-20b2-42a2-a5be-21d114745f4f",
+      "name": "Get Kobo Data HND",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -144,
+        2496
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "https://kf.soilfer-data.fao.org/api/v2/assets/aYU8RNGWtCtwTJh2ph6FdM/data/",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "query",
+              "value": "={{ JSON.stringify({ \"_submission_time\": { \"$gte\": $today.minus({days: 23}).format('yyyy-MM-dd') } }) }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "f166535f191d1ac07229c1ed9724d8b9481ae9e4"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f00fa863-c5d5-4cd2-b9ba-fdec86d3ec4d",
+      "name": "Get Kobo Data GTM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -144,
+        2336
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://kf.soilfer-data.fao.org/api/v2/assets/aXhpApWo6jKUHmJ43PJMpj/data/",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "query",
+              "value": "={{ JSON.stringify({ \"_submission_time\": { \"$gte\": $today.minus({days: 2000}).format('yyyy-MM-dd') } }) }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token f166535f191d1ac07229c1ed9724d8b9481ae9e4"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "231eece3-d421-4d7f-af57-54891e3e7bb3",
+      "name": "Get Kobo Data ZMB",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -144,
+        2160
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// TUN COMPREHENSIVE TRANSFORMATION - CORRECTED VERSION\n// Handles vegetated (with percentages), non-vegetated (no percentages), and water (no percentages)\n// Key insight: ALL vegetation percentages are in cultivated_arable_land_group, regardless of natural/cultivated\n\nfunction parsePercentage(value) {\n    if (!value) return 0;\n    const str = String(value);\n    if (str.includes('_')) {\n        const parts = str.split('_').map(Number);\n        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {\n            // Return MAX value\n            return parts[1];\n        }\n    }\n    const num = parseFloat(str);\n    return isNaN(num) ? 0 : num;\n}\n\nfunction generateImageName(uuid, aspect, originalFilename) {\n    if (!originalFilename) return '';\n    // Extract UUID without 'uuid:' prefix if present\n    const cleanUuid = uuid.replace('uuid:', '');\n    return `${cleanUuid}-${aspect.toLowerCase()}.jpg`;\n}\n\nconst inputItem = $input.all()[0];\nif (!inputItem) return [];\n\nconst rawJson = inputItem.json;\n\nlet items = [];\nif (rawJson.results && Array.isArray(rawJson.results)) {\n    items = rawJson.results;\n} else if (Array.isArray(rawJson)) {\n    items = rawJson;\n} else {\n    items = [rawJson];\n}\n\nconst processedItems = [];\n\nfor (const data of items) {\n    const uuid = data['meta/instanceID'] || data['_uuid'];\n    const countryCode = 'TUN';\n    const submissionTime = data['_submission_time'];\n\n    const siteId = data['soilFER_collect/soil_description_sampling/Site_identification/site_id'] || 'UNKNOWN_SITE';\n    const psuId = siteId ? siteId.split(/[-_]/)[0] : 'N/A';\n    const province = data['soilFER_collect/soil_description_sampling/Site_identification/selected_province'] || '';\n\n    const surveyor = data['soilFER_collect/section0_general_Info/_3_Surveyor_s_Full_Name'] ||\n                     data['soilFER_collect/section0_general_Info/surveyor_name'] ||\n                     data['username'] || '';\n    const surveyDate = data['today'] || data['start']?.split('T')[0];\n\n    let lat = null, lon = null, elev = null;\n    const geopointStr = data['soilFER_collect/soil_description_sampling/Site_identification/geopoint'];\n    if (geopointStr) {\n        const parts = geopointStr.split(' ');\n        lat = parts[0];\n        lon = parts[1];\n        elev = parts[2];\n    } else if (data['_geolocation']) {\n        lat = data['_geolocation'][0];\n        lon = data['_geolocation'][1];\n    }\n\n    const landform = data['soilFER_collect/soil_description_sampling/erosion_status/landscape_description/landform_classification'] || '';\n\n    const lcPath = 'soilFER_collect/soil_description_sampling/erosion_status/landcover_description';\n    const level1Class = data[`${lcPath}/land_cover_types`] || '';\n\n    const components = [];\n\n    // Component 1: Dominant landcover\n    const domPath = `${lcPath}/dominant_landcover`;\n    const domLandcover = data[`${domPath}/landcover`];\n\n    if (domLandcover) {\n        const details = [];\n        let pct = 0;\n\n        if (domLandcover === 'vegetated') {\n            // VEGETATED: Always check cultivated_arable_land_group for percentage data\n            const groupPath = `${domPath}/cultivated_arable_land_group`;\n            const mainVegType = data[`${groupPath}/main_vegetation_type`];\n\n            // Get percentage based on vegetation type\n            let min = null, max = null;\n            if (mainVegType === 'herbaceous') {\n                min = data[`${groupPath}/Minimum_percentage_cover_herb`];\n                max = data[`${groupPath}/Maximum_percentage_cover_herb`];\n            } else if (mainVegType === 'shrubs' || mainVegType === 'schrubs') {\n                min = data[`${groupPath}/Minimum_percentage_cover_shrub`];\n                max = data[`${groupPath}/Maximum_percentage_cover_shrub`];\n            } else if (mainVegType === 'trees') {\n                min = data[`${groupPath}/Minimum_percentage_cover_tree`];\n                max = data[`${groupPath}/Maximum_percentage_cover_tree`];\n            }\n\n            pct = parsePercentage(max) || parsePercentage(min) || 0;\n\n            const artificiality = data[`${groupPath}/vegetation_artificiality`];\n            const category = data[`${groupPath}/category`];\n            const other = data[`${groupPath}/other`];\n\n            // Get crop detail based on category\n            let cropDetail = '';\n            if (category === 'oilseed_crops') {\n                cropDetail = data[`${groupPath}/oilseed_crops`];\n            } else if (category === 'basic_grains') {\n                cropDetail = data[`${groupPath}/basic_grains`];\n            } else if (category === 'leguminous_crops') {\n                cropDetail = data[`${groupPath}/leguminous_crops`];\n            } else if (category === 'fodder_crops') {\n                cropDetail = data[`${groupPath}/fodder_crops`];\n            } else if (category === 'industrial_crops') {\n                cropDetail = data[`${groupPath}/industrial_crops`];\n            } else if (category === 'vegetable_crops') {\n                cropDetail = data[`${groupPath}/vegetable_crops`];\n            } else if (category === 'fruit_crops') {\n                cropDetail = data[`${groupPath}/fruit_crops`];\n            } else if (category === 'other') {\n                cropDetail = other;\n            }\n\n            const season = data[`${groupPath}/season`];\n            const onSeasonType = data[`${groupPath}/on_season_type`];\n            const offSeasonType = data[`${groupPath}/off_season_type`];\n            const frequency = data[`${groupPath}/frequency`];\n            const plantMinHeight = data[`${groupPath}/plant_minimum_height`];\n            const plantMaxHeight = data[`${groupPath}/plant_maximum_height`];\n            const waterSupply = data[`${groupPath}/water_supply`];\n\n            if (domLandcover) details.push(`landcover: ${domLandcover}`);\n            if (mainVegType) details.push(`veg_type: ${mainVegType}`);\n            if (artificiality) details.push(`artificiality: ${artificiality}`);\n            if (category) details.push(`category: ${category}`);\n            if (cropDetail) details.push(`crop: ${cropDetail}`);\n            if (season) details.push(`season: ${season}`);\n            if (onSeasonType) details.push(`on_season_type: ${onSeasonType}`);\n            if (offSeasonType) details.push(`off_season_type: ${offSeasonType}`);\n            if (frequency) details.push(`frequency: ${frequency}`);\n            if (plantMinHeight) details.push(`plant_min_height: ${plantMinHeight}`);\n            if (plantMaxHeight) details.push(`plant_max_height: ${plantMaxHeight}`);\n            if (waterSupply) details.push(`water: ${waterSupply}`);\n\n        } else if (domLandcover === 'non-vegetated') {\n            // NON-VEGETATED: Check artificial_surfaces_group (NO percentage fields)\n            const groupPath = `${domPath}/artificial_surfaces_group`;\n            const nonVegArea = data[`${groupPath}/Non_vegetated_area`];\n            const naturalSurface = data[`${groupPath}/Natural_surface`];\n            const artificialSurface = data[`${groupPath}/artificial_surfaces`];\n            const offSeasonType = data[`${groupPath}/off_season_type`];\n\n            // Non-vegetated surfaces don't have percentage fields (leave empty or 0)\n            pct = 0;\n\n            if (domLandcover) details.push(`landcover: ${domLandcover}`);\n            if (nonVegArea) details.push(`area_type: ${nonVegArea}`);\n            if (naturalSurface) details.push(`natural_surface: ${naturalSurface}`);\n            if (artificialSurface) details.push(`artificial_surface: ${artificialSurface}`);\n            if (offSeasonType) details.push(`off_season: ${offSeasonType}`);\n\n        } else if (domLandcover === 'water') {\n            // WATER: Check water_group (NO percentage fields)\n            const groupPath = `${domPath}/water_group`;\n            const waterType = data[`${groupPath}/water_type`];\n\n            pct = 0;\n\n            if (domLandcover) details.push(`landcover: ${domLandcover}`);\n            if (waterType) details.push(`water_type: ${waterType}`);\n        }\n\n        components.push({\n            classification: domLandcover,\n            percentage: pct,\n            details: details.join(' | ')\n        });\n    }\n\n    // Component 2: Secondary vegetation (only if cultivated_arable_land_group exists)\n    const groupPath = `${domPath}/cultivated_arable_land_group`;\n    const hasSecondary = data[`${groupPath}/any_secondary_veg`];\n\n    if (hasSecondary === 'yes') {\n        const secVegType = data[`${groupPath}/secondary_vegetation_type`] || 'Secondary';\n        const details = [];\n\n        let minSec = null, maxSec = null;\n        if (secVegType === 'herbaceous') {\n            minSec = data[`${groupPath}/min_perc_cover_secondary_herb`];\n            maxSec = data[`${groupPath}/max_perc_cover_secondary_herb`];\n        } else if (secVegType === 'shrubs' || secVegType === 'schrubs') {\n            minSec = data[`${groupPath}/min_perc_cover_secondary_shrub`];\n            maxSec = data[`${groupPath}/max_perc_cover_secondary_shrub`];\n        } else if (secVegType === 'trees') {\n            minSec = data[`${groupPath}/min_perc_cover_secondary_tree`];\n            maxSec = data[`${groupPath}/max_perc_cover_secondary_tree`];\n        }\n\n        const pctSec = parsePercentage(maxSec) || parsePercentage(minSec) || 0;\n\n        details.push(`secondary veg_type: ${secVegType}`);\n\n        components.push({\n            classification: 'vegetated',\n            percentage: pctSec,\n            details: details.join(' | ')\n        });\n    }\n\n    // Component 3: Third vegetation (only if cultivated_arable_land_group exists)\n    const hasThird = data[`${groupPath}/any_third_veg`];\n\n    if (hasThird === 'yes') {\n        const thirdVegType = data[`${groupPath}/third_vegetation_type`] || 'Third';\n        const details = [];\n\n        let minThird = null, maxThird = null;\n        if (thirdVegType === 'herbaceous') {\n            minThird = data[`${groupPath}/min_perc_cover_third_herb`];\n            maxThird = data[`${groupPath}/max_perc_cover_third_herb`];\n        } else if (thirdVegType === 'shrubs' || thirdVegType === 'schrubs') {\n            minThird = data[`${groupPath}/min_perc_cover_third_shrub`];\n            maxThird = data[`${groupPath}/max_perc_cover_third_shrub`];\n        } else if (thirdVegType === 'trees') {\n            minThird = data[`${groupPath}/min_perc_cover_third_tree`];\n            maxThird = data[`${groupPath}/max_perc_cover_third_tree`];\n        }\n\n        const pctThird = parsePercentage(maxThird) || parsePercentage(minThird) || 0;\n\n        details.push(`third veg_type: ${thirdVegType}`);\n\n        components.push({\n            classification: 'vegetated',\n            percentage: pctThird,\n            details: details.join(' | ')\n        });\n    }\n\n    const uniqueClasses = [level1Class].filter(Boolean);\n    const totalPercentage = components.reduce((acc, c) => acc + (c.percentage || 0), 0);\n\n    // Photos\n    const photoPath = 'soilFER_collect/soil_description_sampling/erosion_status/land_feature_photos';\n    const pNorth = data[`${photoPath}/photo_north`];\n    const pEast = data[`${photoPath}/photo_east`];\n    const pSouth = data[`${photoPath}/photo_south`];\n    const pWest = data[`${photoPath}/photo_west`];\n\n    const attachments = data['_attachments'] || [];\n    const getUrl = (direction) => {\n        const xpath = `${photoPath}/photo_${direction}`;\n        const att = attachments.find(a => a.question_xpath && a.question_xpath === xpath);\n        if (!att || !att.download_url) return '';\n\n        // Remove ?format=json parameter to get actual file\n        // KoboToolbox URLs like: .../attachments/123/?format=json\n        // Need to become: .../attachments/123/\n        return att.download_url.replace(/\\?format=json$/i, '');\n    };\n\n    const comments = data['soilFER_collect/soil_description_sampling/barcode_scan/other_comments'] || '';\n    const surveyorComments = data['soilFER_collect/soil_description_sampling/final_comments_site'] || '';\n\n    processedItems.push({\n        json: {\n            uuid,\n            country_code: countryCode,\n            site_id: siteId,\n            psu_id: psuId,\n            province,\n            surveyor,\n            survey_date: surveyDate,\n            submission_time: submissionTime,\n            latitude: lat,\n            longitude: lon,\n            elevation: elev,\n            landform,\n\n            land_cover_types: level1Class,\n            unique_classifications: uniqueClasses.join(', '),\n            classification_count: uniqueClasses.length,\n            total_percentage: totalPercentage,\n            component_count: components.length,\n\n            comp1_classification: components[0]?.classification || '',\n            comp1_percentage: components[0]?.percentage || '',\n            comp1_details: components[0]?.details || '',\n\n            comp2_classification: components[1]?.classification || '',\n            comp2_percentage: components[1]?.percentage || '',\n            comp2_details: components[1]?.details || '',\n\n            comp3_classification: components[2]?.classification || '',\n            comp3_percentage: components[2]?.percentage || '',\n            comp3_details: components[2]?.details || '',\n\n            comp4_classification: components[3]?.classification || '',\n            comp4_percentage: components[3]?.percentage || '',\n            comp4_details: components[3]?.details || '',\n\n            download_url_north: getUrl('north'),\n            download_url_east: getUrl('east'),\n            download_url_south: getUrl('south'),\n            download_url_west: getUrl('west'),\n\n            filename_north: generateImageName(uuid, 'North', pNorth),\n            filename_east: generateImageName(uuid, 'East', pEast),\n            filename_south: generateImageName(uuid, 'South', pSouth),\n            filename_west: generateImageName(uuid, 'West', pWest),\n\n            comments,\n\n            validation_status: 'PENDING',\n            is_correct: '',\n            final_classification: '',\n            main_crop_type: '',\n            validator_comments: '',\n            validator_name: '',\n            validation_date: '',\n            surveyor_comments: surveyorComments,\n            workflow_date: new Date().toISOString()\n        }\n    });\n}\n\nreturn processedItems;\n"
+      },
+      "id": "ebf2023f-b151-48d3-aa72-21eb095faed5",
+      "name": "Process KoboToolbox Data4",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        1984
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://kf.soilfer-data.fao.org/api/v2/assets/aLALh2Lp2HwbC2tTejyAzR/data/",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "query",
+              "value": "={{ JSON.stringify({ \"_submission_time\": { \"$gte\": $today.minus({days: 37}).format('yyyy-MM-dd') } }) }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token f166535f191d1ac07229c1ed9724d8b9481ae9e4"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fed1f85d-d7a3-4a13-a55b-ee41db63d458",
+      "name": "Get Kobo Data TUN",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -144,
+        1984
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// PROCESS DATA - Land Cover Classification Focused - GHANA VERSION\n// Extracts land cover data and ONLY landscape photos\n// Adapted for Ghana form structure with legacy percentage field names (Minimum/Maximum/Total)\n// Uses array-based landcover_description structure (same as ZMB/KEN)\n\nconst inputItem = $input.all()[0];\nif (!inputItem) return [];\n\nconst rawJson = inputItem.json;\n\nlet items = [];\nif (Array.isArray(rawJson)) {\n  items = rawJson;\n} else if (rawJson.features && Array.isArray(rawJson.features)) {\n  items = rawJson.features;\n} else if (rawJson.results && Array.isArray(rawJson.results)) {\n  items = rawJson.results;\n} else {\n  items = [rawJson];\n}\n\nconst processedItems = [];\n\n// Helper function to convert percentage range to maximum value\n// \"10_20\" -> 20, \"90_100\" -> 100, \"0_10\" -> 10\nfunction parsePercentageRange(rangeStr) {\n  if (!rangeStr) return 0;\n  if (typeof rangeStr === 'number') return rangeStr;\n\n  const str = String(rangeStr);\n  // Check if it's a range format (e.g., \"10_20\")\n  if (str.includes('_')) {\n    const parts = str.split('_');\n    // Return the maximum (second number)\n    return parseFloat(parts[1]) || 0;\n  }\n  // Otherwise try to parse as a number\n  return parseFloat(str) || 0;\n}\n\nfor (const row of items) {\n  let data = row;\n  let geometry = null;\n  if (row.type === 'Feature' && row.properties) {\n    data = row.properties;\n    geometry = row.geometry;\n  }\n\n  const uuid = data._uuid || data['formhub/uuid'] || '';\n  const submission_time = data._submission_time || null;\n  const today = data.today || null;\n  const surveyor = data['soilFER_collect/section0_general_Info/surveyor_name'] || data.username || 'unknown';\n\n  const site_id = data['soilFER_collect/soil_description_sampling/Site_identification/site_id'] || '';\n  const psu_id = site_id ? site_id.split(/[-_]/)[0] : '';\n  const province = data['soilFER_collect/soil_description_sampling/Site_identification/selected_province'] || '';\n\n  // Extract country code from site_id (e.g., \"GHA0101_1_1C\" -> \"GHA\")\n  const country_code = site_id ? site_id.substring(0, 3).toUpperCase() : 'GHA';\n\n  let geopoint = data['soilFER_collect/soil_description_sampling/Site_identification/geopoint'];\n  if (!geopoint && geometry && geometry.coordinates) {\n    geopoint = `${geometry.coordinates[1]} ${geometry.coordinates[0]}`;\n  }\n\n  const landform = data['soilFER_collect/soil_description_sampling/erosion_status/landscape_description/landform_classification'] || '';\n\n  // Photos - same path for Ghana\n  const lc_photo_north = data['soilFER_collect/soil_description_sampling/erosion_status/land_feature_photos/photo_north'] || '';\n  const lc_photo_east = data['soilFER_collect/soil_description_sampling/erosion_status/land_feature_photos/photo_east'] || '';\n  const lc_photo_south = data['soilFER_collect/soil_description_sampling/erosion_status/land_feature_photos/photo_south'] || '';\n  const lc_photo_west = data['soilFER_collect/soil_description_sampling/erosion_status/land_feature_photos/photo_west'] || '';\n\n  // Land cover classification - from array structure\n  const landcover_array = data['soilFER_collect/soil_description_sampling/erosion_status/landcover_description'];\n  let primary_land_cover_classification = '';\n\n  if (Array.isArray(landcover_array) && landcover_array.length > 0) {\n    primary_land_cover_classification = landcover_array[0]['soilFER_collect/soil_description_sampling/erosion_status/landcover_description/land_cover_types'] || '';\n  }\n\n  // Build components array from array-based land cover description\n  const landcover_description = [];\n  const all_land_cover_classifications = [];\n\n  if (Array.isArray(landcover_array)) {\n    let component_counter = 0;\n\n    for (const lc_item of landcover_array) {\n      component_counter++;\n\n      const lcPrefix = 'soilFER_collect/soil_description_sampling/erosion_status/landcover_description/dominant_landcover/';\n      const cultivatedPrefix = `${lcPrefix}cultivated_arable_land_group/`;\n\n      const landcover = lc_item[`${lcPrefix}landcover`] || '';\n\n      // GHANA SPECIFIC: Uses _001 suffix for these fields (like ZMB/KEN)\n      const vegetation_artificiality = lc_item[`${cultivatedPrefix}vegetation_artificiality_001`] || '';\n      const category = lc_item[`${cultivatedPrefix}category_001`] || '';\n\n      const season = lc_item[`${cultivatedPrefix}season`] || '';\n      const frequency = lc_item[`${cultivatedPrefix}frequency`] || '';\n      const water_supply = lc_item[`${cultivatedPrefix}water_supply`] || '';\n\n      const classification = lc_item['soilFER_collect/soil_description_sampling/erosion_status/landcover_description/land_cover_types'] || '';\n\n      // Main vegetation type for this component\n      const main_veg_type = lc_item[`${cultivatedPrefix}main_vegetation_type`] || '';\n      if (main_veg_type) {\n        // GHANA SPECIFIC: Uses legacy field names (Minimum/Maximum/Total like ZMB/KEN)\n        const max_percentage_field = lc_item[`${cultivatedPrefix}Maximum`];\n        const comp_percentage = parsePercentageRange(max_percentage_field);\n\n        // Get crop detail based on category (only for cultivated vegetation)\n        let crop_detail = '';\n        if (vegetation_artificiality === 'cultivated' && category) {\n          if (category === 'cereal_crops') {\n            crop_detail = lc_item[`${cultivatedPrefix}cereal_crops`] || '';\n          } else if (category === 'legumes') {\n            crop_detail = lc_item[`${cultivatedPrefix}legumes`] || '';\n          } else if (category === 'root_tuber_crops') {\n            crop_detail = lc_item[`${cultivatedPrefix}root_tuber_crops`] || '';\n          } else if (category === 'vegetables') {\n            crop_detail = lc_item[`${cultivatedPrefix}vegetables`] || '';\n          } else if (category === 'fruits') {\n            crop_detail = lc_item[`${cultivatedPrefix}fruits`] || '';\n          } else if (category === 'other_crops' || category === 'other') {\n            crop_detail = lc_item[`${cultivatedPrefix}other_crops`] || lc_item[`${cultivatedPrefix}other`] || '';\n          }\n        }\n\n        // STANDARD OUTPUT FORMAT (matching MOZ template)\n        landcover_description.push({\n          component_number: component_counter,\n          landcover: landcover,\n          percentage: comp_percentage,\n          classification: classification,\n          artificiality: vegetation_artificiality,\n          veg_type: main_veg_type,\n          category: category,\n          crop_detail: crop_detail,\n          season: season,\n          frequency: frequency,\n          water_supply: water_supply\n        });\n      }\n\n      // Add to classifications array\n      if (classification) {\n        all_land_cover_classifications.push({\n          source: 'component_array',\n          component_number: component_counter,\n          classification: classification,\n          percentage: landcover_description.length > 0 ? landcover_description[landcover_description.length - 1].percentage : null\n        });\n      }\n    }\n  }\n\n  // Add site-level classification if different from component-level\n  if (primary_land_cover_classification) {\n    all_land_cover_classifications.unshift({\n      source: 'site_level',\n      component_number: null,\n      classification: primary_land_cover_classification,\n      percentage: null\n    });\n  }\n\n  const unique_classifications = [...new Set(all_land_cover_classifications.map(c => c.classification))];\n\n  // Calculate total percentage\n  const total_percentage = landcover_description.reduce((sum, comp) => sum + (comp.percentage || 0), 0);\n\n  const comments = data['soilFER_collect/soil_description_sampling/barcode_scan/other_comments'] || '';\n\n  const attachments = data._attachments || [];\n  const lc_photo_attachments = attachments.filter(att => {\n    const xpath = att.question_xpath || '';\n    return xpath.includes('land_feature_photos') &&\n           (xpath.includes('photo_north') || xpath.includes('photo_east') ||\n            xpath.includes('photo_south') || xpath.includes('photo_west'));\n  });\n\n  const has_lc_photo_north = !!lc_photo_north;\n  const has_lc_photo_east = !!lc_photo_east;\n  const has_lc_photo_south = !!lc_photo_south;\n  const has_lc_photo_west = !!lc_photo_west;\n\n  processedItems.push({\n    json: {\n      uuid,\n      country_code,\n      submission_time,\n      surveyor,\n      today,\n      site_id,\n      psu_id,\n      province,\n      geopoint,\n      landform,\n      primary_land_cover_classification,\n      classification_source: primary_land_cover_classification ? 'site_level' : 'unknown',\n      all_land_cover_classifications,\n      unique_classifications,\n      classification_count: all_land_cover_classifications.length,\n      total_percentage,\n      landcover_description,\n      lc_photo_north,\n      lc_photo_east,\n      lc_photo_south,\n      lc_photo_west,\n      has_lc_photo_north,\n      has_lc_photo_east,\n      has_lc_photo_south,\n      has_lc_photo_west,\n      lc_attachments: lc_photo_attachments,\n      comments\n    }\n  });\n}\n\nreturn processedItems;\n"
+      },
+      "id": "f7adf8c7-cfb5-4eab-92d6-f50fb5f80b7d",
+      "name": "Process KoboToolbox Data5",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        1808
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "https://kf.soilfer-data.fao.org/api/v2/assets/aQtvKZHiZmtqVCkQsGw2X4/data/",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "query",
+              "value": "={{ JSON.stringify({ \"_submission_time\": { \"$gte\": $today.minus({days: 2500}).format('yyyy-MM-dd') } }) }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token f166535f191d1ac07229c1ed9724d8b9481ae9e4"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4c5ae4b5-a192-4c11-98a3-5b0e2ebe6c0c",
+      "name": "Get Kobo Data GHA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -144,
+        1808
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// PROCESS DATA - Land Cover Classification Focused - KENYA VERSION\n// Extracts land cover data and ONLY landscape photos\n// Adapted for Kenya form structure with legacy percentage field names (Minimum/Maximum/Total)\n// Uses array-based landcover_description structure and includes participant consent fields\n\nconst inputItem = $input.all()[0];\nif (!inputItem) return [];\n\nconst rawJson = inputItem.json;\n\nlet items = [];\nif (Array.isArray(rawJson)) {\n  items = rawJson;\n} else if (rawJson.features && Array.isArray(rawJson.features)) {\n  items = rawJson.features;\n} else if (rawJson.results && Array.isArray(rawJson.results)) {\n  items = rawJson.results;\n} else {\n  items = [rawJson];\n}\n\nconst processedItems = [];\n\n// Helper function to convert percentage range to maximum value\n// \"10_20\" -> 20, \"90_100\" -> 100, \"0_10\" -> 10\nfunction parsePercentageRange(rangeStr) {\n  if (!rangeStr) return 0;\n  if (typeof rangeStr === 'number') return rangeStr;\n\n  const str = String(rangeStr);\n  // Check if it's a range format (e.g., \"10_20\")\n  if (str.includes('_')) {\n    const parts = str.split('_');\n    // Return the maximum (second number)\n    return parseFloat(parts[1]) || 0;\n  }\n  // Otherwise try to parse as a number\n  return parseFloat(str) || 0;\n}\n\nfor (const row of items) {\n  let data = row;\n  let geometry = null;\n  if (row.type === 'Feature' && row.properties) {\n    data = row.properties;\n    geometry = row.geometry;\n  }\n\n  const uuid = data._uuid || data['formhub/uuid'] || '';\n  const submission_time = data._submission_time || null;\n  const today = data.today || null;\n  const surveyor = data['soilFER_collect/section0_general_Info/surveyor_name'] || data.username || 'unknown';\n\n  // KENYA SPECIFIC: Additional participant/consent fields\n  const participant_name = data['soilFER_collect/section0_general_Info/participant_name'] || '';\n  const consent = data['soilFER_collect/section0_general_Info/Landholder_please_m_elow_to_give_consent'] || '';\n\n  const site_id = data['soilFER_collect/soil_description_sampling/Site_identification/site_id'] || '';\n  const psu_id = site_id ? site_id.split(/[-_]/)[0] : '';\n  const province = data['soilFER_collect/soil_description_sampling/Site_identification/selected_province'] || '';\n\n  // Extract country code from site_id (e.g., \"KEN0340-2-1C\" -> \"KEN\")\n  const country_code = site_id ? site_id.substring(0, 3).toUpperCase() : 'KEN';\n\n  let geopoint = data['soilFER_collect/soil_description_sampling/Site_identification/geopoint'];\n  if (!geopoint && geometry && geometry.coordinates) {\n    geopoint = `${geometry.coordinates[1]} ${geometry.coordinates[0]}`;\n  }\n\n  const landform = data['soilFER_collect/soil_description_sampling/erosion_status/landscape_description/landform_classification'] || '';\n\n  // Photos - same path for Kenya\n  const lc_photo_north = data['soilFER_collect/soil_description_sampling/erosion_status/land_feature_photos/photo_north'] || '';\n  const lc_photo_east = data['soilFER_collect/soil_description_sampling/erosion_status/land_feature_photos/photo_east'] || '';\n  const lc_photo_south = data['soilFER_collect/soil_description_sampling/erosion_status/land_feature_photos/photo_south'] || '';\n  const lc_photo_west = data['soilFER_collect/soil_description_sampling/erosion_status/land_feature_photos/photo_west'] || '';\n\n  // Land cover classification - from array structure\n  const landcover_array = data['soilFER_collect/soil_description_sampling/erosion_status/landcover_description'];\n  let primary_land_cover_classification = '';\n\n  if (Array.isArray(landcover_array) && landcover_array.length > 0) {\n    primary_land_cover_classification = landcover_array[0]['soilFER_collect/soil_description_sampling/erosion_status/landcover_description/land_cover_types'] || '';\n  }\n\n  // Build components array from array-based land cover description\n  const landcover_description = [];\n  const all_land_cover_classifications = [];\n\n  if (Array.isArray(landcover_array)) {\n    let component_counter = 0;\n\n    for (const lc_item of landcover_array) {\n      component_counter++;\n\n      const lcPrefix = 'soilFER_collect/soil_description_sampling/erosion_status/landcover_description/dominant_landcover/';\n      const cultivatedPrefix = `${lcPrefix}cultivated_arable_land_group/`;\n\n      const landcover = lc_item[`${lcPrefix}landcover`] || '';\n\n      // KENYA SPECIFIC: Uses _001 suffix for these fields (like Zambia)\n      const vegetation_artificiality = lc_item[`${cultivatedPrefix}vegetation_artificiality_001`] || '';\n      const category = lc_item[`${cultivatedPrefix}category_001`] || '';\n\n      const season = lc_item[`${cultivatedPrefix}season`] || '';\n      const frequency = lc_item[`${cultivatedPrefix}frequency`] || '';\n      const water_supply = lc_item[`${cultivatedPrefix}water_supply`] || '';\n\n      const classification = lc_item['soilFER_collect/soil_description_sampling/erosion_status/landcover_description/land_cover_types'] || '';\n\n      // Main vegetation type for this component\n      const main_veg_type = lc_item[`${cultivatedPrefix}main_vegetation_type`] || '';\n      if (main_veg_type) {\n        // KENYA SPECIFIC: Uses legacy field names (Minimum/Maximum/Total like Zambia)\n        const max_percentage_field = lc_item[`${cultivatedPrefix}Maximum`];\n        const comp_percentage = parsePercentageRange(max_percentage_field);\n\n        // Get crop detail based on category (only for cultivated vegetation)\n        let crop_detail = '';\n        if (vegetation_artificiality === 'cultivated' && category) {\n          if (category === 'cereal_crops') {\n            crop_detail = lc_item[`${cultivatedPrefix}cereal_crops`] || '';\n          } else if (category === 'legumes') {\n            crop_detail = lc_item[`${cultivatedPrefix}legumes`] || '';\n          } else if (category === 'root_tuber_crops') {\n            crop_detail = lc_item[`${cultivatedPrefix}root_tuber_crops`] || '';\n          } else if (category === 'vegetables') {\n            crop_detail = lc_item[`${cultivatedPrefix}vegetables`] || '';\n          } else if (category === 'fruits') {\n            crop_detail = lc_item[`${cultivatedPrefix}fruits`] || '';\n          } else if (category === 'other_crops' || category === 'other') {\n            crop_detail = lc_item[`${cultivatedPrefix}other_crops`] || lc_item[`${cultivatedPrefix}other`] || '';\n          }\n        }\n\n        // STANDARD OUTPUT FORMAT (matching MOZ template)\n        landcover_description.push({\n          component_number: component_counter,\n          landcover: landcover,\n          percentage: comp_percentage,\n          classification: classification,\n          artificiality: vegetation_artificiality,\n          veg_type: main_veg_type,\n          category: category,\n          crop_detail: crop_detail,\n          season: season,\n          frequency: frequency,\n          water_supply: water_supply\n        });\n      }\n\n      // Add to classifications array\n      if (classification) {\n        all_land_cover_classifications.push({\n          source: 'component_array',\n          component_number: component_counter,\n          classification: classification,\n          percentage: landcover_description.length > 0 ? landcover_description[landcover_description.length - 1].percentage : null\n        });\n      }\n    }\n  }\n\n  // Add site-level classification if different from component-level\n  if (primary_land_cover_classification) {\n    all_land_cover_classifications.unshift({\n      source: 'site_level',\n      component_number: null,\n      classification: primary_land_cover_classification,\n      percentage: null\n    });\n  }\n\n  const unique_classifications = [...new Set(all_land_cover_classifications.map(c => c.classification))];\n\n  // Calculate total percentage\n  const total_percentage = landcover_description.reduce((sum, comp) => sum + (comp.percentage || 0), 0);\n\n  const comments = data['soilFER_collect/soil_description_sampling/barcode_scan/other_comments'] || '';\n\n  const attachments = data._attachments || [];\n  const lc_photo_attachments = attachments.filter(att => {\n    const xpath = att.question_xpath || '';\n    return xpath.includes('land_feature_photos') &&\n           (xpath.includes('photo_north') || xpath.includes('photo_east') ||\n            xpath.includes('photo_south') || xpath.includes('photo_west'));\n  });\n\n  const has_lc_photo_north = !!lc_photo_north;\n  const has_lc_photo_east = !!lc_photo_east;\n  const has_lc_photo_south = !!lc_photo_south;\n  const has_lc_photo_west = !!lc_photo_west;\n\n  processedItems.push({\n    json: {\n      uuid,\n      country_code,\n      submission_time,\n      surveyor,\n      participant_name,  // Kenya-specific field\n      consent,           // Kenya-specific field\n      today,\n      site_id,\n      psu_id,\n      province,\n      geopoint,\n      landform,\n      primary_land_cover_classification,\n      classification_source: primary_land_cover_classification ? 'site_level' : 'unknown',\n      all_land_cover_classifications,\n      unique_classifications,\n      classification_count: all_land_cover_classifications.length,\n      total_percentage,\n      landcover_description,\n      lc_photo_north,\n      lc_photo_east,\n      lc_photo_south,\n      lc_photo_west,\n      has_lc_photo_north,\n      has_lc_photo_east,\n      has_lc_photo_south,\n      has_lc_photo_west,\n      lc_attachments: lc_photo_attachments,\n      comments\n    }\n  });\n}\n\nreturn processedItems;\n"
+      },
+      "id": "18d4b26a-f512-48b6-80c8-d2b9e224e053",
+      "name": "Process KoboToolbox Data6",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        1648
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "https://kf.soilfer-data.fao.org/api/v2/assets/aPV3Fta6MPNt7ZQmcJqw9s/data/",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "query",
+              "value": "={{ JSON.stringify({ \"_submission_time\": { \"$gte\": $today.minus({days: 1700}).format('yyyy-MM-dd') } }) }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token f166535f191d1ac07229c1ed9724d8b9481ae9e4"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a0cc8506-8e0b-4846-b1c2-e7e1dd95a0af",
+      "name": "Get Kobo Data KEN",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -144,
+        1648
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "numberInputs": 7
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        432,
+        2208
+      ],
+      "id": "f4076f39-68a4-4a83-9724-e43b5fca5a4e",
+      "name": "Merge"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Config": {
+      "main": [
+        [
+          {
+            "node": "Get Existing UUIDs",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Kobo Data MOZ",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Kobo Data HND",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Kobo Data GTM",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Kobo Data ZMB",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Kobo Data TUN",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Kobo Data GHA",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Kobo Data KEN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Existing UUIDs": {
+      "main": [
+        [
+          {
+            "node": "Filter New Records Only",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Process KoboToolbox Data": {
+      "main": [
+        []
+      ]
+    },
+    "Prepare All Data": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Has North Photo?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Has South Photo?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Has East Photo?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Has West Photo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has North Photo?": {
+      "main": [
+        [
+          {
+            "node": "Download Photo North",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No North Photo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has South Photo?": {
+      "main": [
+        [
+          {
+            "node": "Download Photo South",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No South Photo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has East Photo?": {
+      "main": [
+        [
+          {
+            "node": "Download Photo East",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No East Photo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has West Photo?": {
+      "main": [
+        [
+          {
+            "node": "Download Photo West",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No West Photo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Photo North": {
+      "main": [
+        [
+          {
+            "node": "Upload North to Server",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Photo South": {
+      "main": [
+        [
+          {
+            "node": "Upload South to Server",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Photo East": {
+      "main": [
+        [
+          {
+            "node": "Upload East to Server",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Photo West": {
+      "main": [
+        [
+          {
+            "node": "Upload West to Server",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload North to Server": {
+      "main": [
+        [
+          {
+            "node": "Merge All Uploads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No North Photo": {
+      "main": [
+        [
+          {
+            "node": "Merge All Uploads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload South to Server": {
+      "main": [
+        [
+          {
+            "node": "Merge All Uploads",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "No South Photo": {
+      "main": [
+        [
+          {
+            "node": "Merge All Uploads",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Upload East to Server": {
+      "main": [
+        [
+          {
+            "node": "Merge All Uploads",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "No East Photo": {
+      "main": [
+        [
+          {
+            "node": "Merge All Uploads",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Upload West to Server": {
+      "main": [
+        [
+          {
+            "node": "Merge All Uploads",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "No West Photo": {
+      "main": [
+        [
+          {
+            "node": "Merge All Uploads",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Merge All Uploads": {
+      "main": [
+        [
+          {
+            "node": "Build Sheet Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Sheet Row": {
+      "main": [
+        [
+          {
+            "node": "Append to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append to Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Kobo Data MOZ": {
+      "main": [
+        [
+          {
+            "node": "Process KoboToolbox Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Kobo Data HND": {
+      "main": [
+        [
+          {
+            "node": "Process KoboToolbox Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Kobo Data GTM": {
+      "main": [
+        [
+          {
+            "node": "Process KoboToolbox Data2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Kobo Data ZMB": {
+      "main": [
+        [
+          {
+            "node": "Process KoboToolbox Data3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Kobo Data TUN": {
+      "main": [
+        [
+          {
+            "node": "Process KoboToolbox Data4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Kobo Data GHA": {
+      "main": [
+        [
+          {
+            "node": "Process KoboToolbox Data5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Kobo Data KEN": {
+      "main": [
+        [
+          {
+            "node": "Process KoboToolbox Data6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process KoboToolbox Data6": {
+      "main": [
+        []
+      ]
+    },
+    "Process KoboToolbox Data5": {
+      "main": [
+        []
+      ]
+    },
+    "Process KoboToolbox Data4": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Process KoboToolbox Data3": {
+      "main": [
+        []
+      ]
+    },
+    "Process KoboToolbox Data2": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Process KoboToolbox Data1": {
+      "main": [
+        []
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Filter New Records Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter New Records Only": {
+      "main": [
+        [
+          {
+            "node": "Prepare All Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "1ba2f5e5-6365-4b27-a15c-215e884a44d6",
+  "meta": {
+    "instanceId": "d53bca100f8298c30866c0200addad1fcb3d387bddd210800e9ff542ed8c8790"
+  },
+  "id": "BF7ViyAkAFBN0lhGXzBm6",
+  "tags": []
+}

@@ -1,0 +1,36 @@
+{
+  "name": "Upload North to Server",
+  "type": "n8n-nodes-base.httpRequest",
+  "typeVersion": 4.3,
+  "parameters": {
+    "method": "POST",
+    "url": "https://validate.soildecisions.com/api/upload",
+    "authentication": "genericCredentialType",
+    "genericAuthType": "httpHeaderAuth",
+    "sendBody": true,
+    "contentType": "multipart-form-data",
+    "bodyParameters": {
+      "parameters": [
+        {
+          "parameterType": "formBinaryData",
+          "name": "image",
+          "inputDataFieldName": "data"
+        },
+        {
+          "parameterType": "formData",
+          "name": "filename",
+          "value": "={{ $json.filename_north }}"
+        }
+      ]
+    },
+    "options": {
+      "response": {
+        "response": {
+          "neverError": true
+        }
+      },
+      "timeout": 30000
+    }
+  },
+  "notes": "Uploads photo to validation server using UUID-based filename. The filename parameter must be formData type, not regular parameter."
+}

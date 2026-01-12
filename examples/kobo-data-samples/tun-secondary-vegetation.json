@@ -1,0 +1,39 @@
+{
+  "count": 1,
+  "results": [
+    {
+      "_id": 5,
+      "start": "2025-11-06T11:00:00.000+01:00",
+      "today": "2025-11-06",
+      "username": "surveyor_tunisia_003",
+      "soilFER_collect/section0_general_Info/_3_Surveyor_s_Full_Name": "Karim Trabelsi",
+      "soilFER_collect/soil_description_sampling/Site_identification/selected_province": "Sousse",
+      "soilFER_collect/soil_description_sampling/Site_identification/site_id": "TUN0003-1-1C",
+      "soilFER_collect/soil_description_sampling/Site_identification/geopoint": "35.8 10.6 30.0 5.2",
+      "soilFER_collect/soil_description_sampling/erosion_status/landscape_description/landform_classification": "undulating",
+      "soilFER_collect/soil_description_sampling/erosion_status/landcover_description/dominant_landcover/landcover": "vegetated",
+      "soilFER_collect/soil_description_sampling/erosion_status/landcover_description/dominant_landcover/cultivated_arable_land_group/main_vegetation_type": "herbaceous",
+      "soilFER_collect/soil_description_sampling/erosion_status/landcover_description/dominant_landcover/cultivated_arable_land_group/Minimum_percentage_cover_herb": "50_60",
+      "soilFER_collect/soil_description_sampling/erosion_status/landcover_description/dominant_landcover/cultivated_arable_land_group/Maximum_percentage_cover_herb": "70_80",
+      "soilFER_collect/soil_description_sampling/erosion_status/landcover_description/dominant_landcover/cultivated_arable_land_group/vegetation_artificiality": "cultivated",
+      "soilFER_collect/soil_description_sampling/erosion_status/landcover_description/dominant_landcover/cultivated_arable_land_group/category": "basic_grains",
+      "soilFER_collect/soil_description_sampling/erosion_status/landcover_description/dominant_landcover/cultivated_arable_land_group/basic_grains": "wheat",
+      "soilFER_collect/soil_description_sampling/erosion_status/landcover_description/dominant_landcover/cultivated_arable_land_group/season": "on_season",
+      "soilFER_collect/soil_description_sampling/erosion_status/landcover_description/dominant_landcover/cultivated_arable_land_group/frequency": "annual",
+      "soilFER_collect/soil_description_sampling/erosion_status/landcover_description/dominant_landcover/cultivated_arable_land_group/water_supply": "rainfed",
+      "soilFER_collect/soil_description_sampling/erosion_status/landcover_description/dominant_landcover/cultivated_arable_land_group/any_secondary_veg": "yes",
+      "soilFER_collect/soil_description_sampling/erosion_status/landcover_description/dominant_landcover/cultivated_arable_land_group/secondary_vegetation_type": "shrubs",
+      "soilFER_collect/soil_description_sampling/erosion_status/landcover_description/dominant_landcover/cultivated_arable_land_group/min_perc_cover_secondary_shrub": "10_20",
+      "soilFER_collect/soil_description_sampling/erosion_status/landcover_description/dominant_landcover/cultivated_arable_land_group/max_perc_cover_secondary_shrub": "20_30",
+      "soilFER_collect/soil_description_sampling/erosion_status/landcover_description/dominant_landcover/cultivated_arable_land_group/any_third_veg": "yes",
+      "soilFER_collect/soil_description_sampling/erosion_status/landcover_description/dominant_landcover/cultivated_arable_land_group/third_vegetation_type": "trees",
+      "soilFER_collect/soil_description_sampling/erosion_status/landcover_description/dominant_landcover/cultivated_arable_land_group/min_perc_cover_third_tree": "0_10",
+      "soilFER_collect/soil_description_sampling/erosion_status/landcover_description/dominant_landcover/cultivated_arable_land_group/max_perc_cover_third_tree": "10_20",
+      "soilFER_collect/soil_description_sampling/erosion_status/landcover_description/land_cover_types": "cropland",
+      "meta/instanceID": "uuid:example-tun-secondary-003",
+      "_uuid": "example-tun-secondary-003",
+      "_geolocation": [35.8, 10.6],
+      "_submission_time": "2025-11-06T12:15:00"
+    }
+  ]
+}

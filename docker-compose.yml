@@ -1,0 +1,45 @@
+# ============================================
+# Validation Dashboard - Docker Compose
+# Add this service to your existing stack
+# ============================================
+
+version: '3.8'
+
+services:
+  validation_dashboard:
+    build:
+      context: ./validation_dashboard
+      dockerfile: Dockerfile
+    container_name: validation_dashboard
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    volumes:
+      # Mount credentials file (place your credentials.json here)
+      - ./secrets:/app/secrets:ro
+    networks:
+      - traefik-network
+    labels:
+      # Traefik configuration
+      - "traefik.enable=true"
+      - "traefik.http.routers.validation.rule=Host(`validate.soildecisions.com`)"
+      - "traefik.http.routers.validation.entrypoints=websecure"
+      - "traefik.http.routers.validation.tls=true"
+      - "traefik.http.routers.validation.tls.certresolver=letsencrypt"
+      - "traefik.http.services.validation.loadbalancer.server.port=3000"
+      # Optional: HTTP to HTTPS redirect
+      - "traefik.http.routers.validation-http.rule=Host(`validate.soildecisions.com`)"
+      - "traefik.http.routers.validation-http.entrypoints=web"
+      - "traefik.http.routers.validation-http.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  traefik-network:
+    external: true

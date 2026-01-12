@@ -274,7 +274,7 @@ If you use this system in your research or project, please cite:
   title = {Land Cover Validation System},
   author = {SoilFER Project Team},
   year = {2026},
-  url = {https://github.com/[your-username]/Land-cover-validation},
+  url = {https://github.com/SoilFER/Land-cover-validation},
   license = {CC-BY-4.0}
 }
 ```
@@ -299,9 +299,9 @@ Licensed under CC BY 4.0
 
 ## 📧 Contact & Support
 
-- **Issues**: [GitHub Issues](https://github.com/[your-username]/Land-cover-validation/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/[your-username]/Land-cover-validation/discussions)
-- **Email**: soilfer-support@example.com
+- **Issues**: [GitHub Issues](https://github.com/SoilFER/Land-cover-validation/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/SoilFER/Land-cover-validation/discussions)
+- **Email**: SoilFER@fao.org
 
 ---
 
@@ -317,7 +317,7 @@ Licensed under CC BY 4.0
 
 <div align="center">
 
-**Built with ❤️ for global soil and land cover research**
+**Built with ❤️ for Sustainable Soil Management**
 
 [⬆ Back to Top](#-land-cover-validation-system)
 

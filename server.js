@@ -797,10 +797,8 @@ app.post('/login', async (req, res) => {
         countries: user.countries || [] // Include assigned countries for validators
       };
 
-      // Update last login timestamp (async, don't wait)
-      updateLastLogin(user.username).catch(err => {
-        console.error('Error updating last login:', err);
-      });
+      // Update last login timestamp (non-critical, don't wait)
+      updateLastLogin(user.username);
 
       console.log(`User logged in: ${user.username} (${user.role})`);
 

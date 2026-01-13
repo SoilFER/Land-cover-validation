@@ -290,7 +290,11 @@
         <% if (user.role === 'admin') { %>
           <a href="/users" class="btn-nav">Manage Users</a>
         <% } %>
-        <a href="/logout" class="btn-logout">Logout</a>
+        <% if (user.is_guest) { %>
+          <a href="/login" class="btn-nav">🔐 Login with Credentials</a>
+        <% } else { %>
+          <a href="/logout" class="btn-logout">Logout</a>
+        <% } %>
       </div>
     </nav>
 

@@ -399,16 +399,25 @@ async function resetUserPassword(username, newPassword) {
 
 /**
  * Middleware: Require user to be authenticated
- * Redirects to /login if not authenticated
+ * If not authenticated, automatically login as guest viewer
  */
 function requireAuth(req, res, next) {
   if (req.session && req.session.user) {
     return next();
   }
 
-  // Store original URL to redirect after login
-  req.session.returnTo = req.originalUrl;
-  res.redirect('/login');
+  // Auto-login as guest viewer for unauthenticated users
+  req.session.user = {
+    username: 'guest',
+    role: 'viewer',
+    email: '',
+    full_name: 'Guest Viewer',
+    countries: [],
+    is_guest: true // Flag to identify guest sessions
+  };
+
+  console.log('Guest viewer auto-logged in');
+  return next();
 }
 
 /**
@@ -749,7 +758,17 @@ app.get('/proxy-image/:fileId', async (req, res) => {
 
 // GET /login - Login page
 app.get('/login', (req, res) => {
-  // If already logged in, redirect to dashboard
+  // If guest user, destroy session to allow real login
+  if (req.session && req.session.user && req.session.user.is_guest) {
+    req.session.destroy((err) => {
+      if (err) console.error('Error destroying guest session:', err);
+      const error = req.query.error;
+      return res.render('login', { error });
+    });
+    return;
+  }
+
+  // If already logged in as real user, redirect to dashboard
   if (req.session && req.session.user) {
     return res.redirect('/');
   }

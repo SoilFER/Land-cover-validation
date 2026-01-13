@@ -42,11 +42,13 @@ A comprehensive system for validating land cover classifications collected throu
 - **Two-tab interface**: Pending Validations vs Validated Sites
 
 ### 🔐 Authentication & Access Control
-- **Role-Based Access Control (RBAC)**: Admin, Validator, Viewer roles
-- **Country-Based Access**: Validators restricted to assigned countries
-- **Secure Authentication**: bcrypt password hashing, httpOnly cookies
+- **Guest Auto-Login**: Unauthenticated users get instant read-only access
+- **Role-Based Access Control (RBAC)**: Admin, Validator, Viewer, Guest roles
+- **Country-Based Access**: Validators restricted to assigned countries, viewers/guests see all
+- **Secure Authentication**: bcrypt password hashing, httpOnly cookies, session regeneration
 - **Session Management**: 8-hour timeout, proxy-aware (Traefik/Cloudflare)
 - **User Management**: Admin panel for creating/editing users and permissions
+- **View-Only Mode**: Guests can browse all data but cannot submit validations
 - **Auto-filled Validator Names**: Automatically populated from session data
 
 ### 🌐 Multi-Country Support
@@ -186,7 +188,7 @@ Follow the prompts to create your administrator account. See [SETUP-AUTH-REVISED
 npm start
 ```
 
-Dashboard available at: `http://localhost:3000` (will redirect to `/login`)
+Dashboard available at: `http://localhost:3000` (automatically logs in as guest for viewing)
 
 ### 7. Deploy with Docker
 
@@ -211,9 +213,27 @@ curl http://localhost:3000/health
 - **[TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[SYSTEM_DOCUMENTATION.md](docs/SYSTEM_DOCUMENTATION.md)** - Comprehensive technical docs
 
-### Authentication Documentation
+### Authentication & User Management
 - **[SETUP-AUTH-REVISED.md](SETUP-AUTH-REVISED.md)** - Quick setup guide for authentication (5 minutes)
 - **[README-AUTH-REVISED.md](README-AUTH-REVISED.md)** - Complete authentication documentation
+
+#### User Roles & Permissions
+
+| Role | Access Level | Permissions |
+|------|-------------|-------------|
+| **Guest** | Read-only (all countries) | View dashboard, view site details, no validation |
+| **Viewer** | Read-only (all countries) | View dashboard, view site details, no validation |
+| **Validator** | Read-write (assigned countries) | Validate sites in assigned countries only |
+| **Admin** | Full access (all countries) | Validate any site, manage users, full CRUD |
+
+#### Guest Auto-Login Feature
+
+Unauthenticated users are automatically logged in as "Guest Viewer" with read-only access:
+- ✅ Browse all validation records across all countries
+- ✅ View detailed site information, maps, and photos
+- ✅ Access validated sites history
+- ❌ Cannot submit validations (form hidden with "Login to Validate" button)
+- 🔐 Click "Login with Credentials" in navbar to authenticate for validation privileges
 
 ### n8n Workflows
 - **[n8n/README.md](n8n/README.md)** - Workflow setup and configuration

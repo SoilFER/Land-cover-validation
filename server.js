@@ -1116,8 +1116,8 @@ app.get('/validated', attachUserToLocals, requireAuth, async (req, res) => {
   }
 });
 
-// GET /validate/:uuid - Formulario (Validator and Admin only)
-app.get('/validate/:uuid', attachUserToLocals, requireAuth, requireRole(['admin', 'validator']), async (req, res) => {
+// GET /validate/:uuid - View validation page (all authenticated users can view, but only admin/validator can submit)
+app.get('/validate/:uuid', attachUserToLocals, requireAuth, async (req, res) => {
   try {
     const { uuid } = req.params;
     const { per_page } = req.query;
@@ -1238,6 +1238,11 @@ app.post('/save', attachUserToLocals, requireAuth, requireRole(['admin', 'valida
       comments,
       returnPerPage
     } = req.body;
+
+    // Prevent guest users from saving validations (additional check)
+    if (req.session.user.is_guest) {
+      return res.status(403).send('Guest users cannot save validations. Please login with credentials.');
+    }
 
     // Get validator name from session instead of form
     const validatorName = req.session.user.full_name;

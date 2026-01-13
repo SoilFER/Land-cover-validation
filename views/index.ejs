@@ -13,6 +13,65 @@
       padding: 20px;
     }
     .container { max-width: 1400px; margin: 0 auto; }
+    /* Navbar */
+    .navbar {
+      background: white;
+      padding: 15px 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    .navbar-brand { font-size: 18px; font-weight: 600; color: #2c5282; }
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 15px;
+      background: #f7fafc;
+      border-radius: 6px;
+    }
+    .role-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .role-admin { background: #c53030; color: white; }
+    .role-validator { background: #2b6cb0; color: white; }
+    .role-viewer { background: #38a169; color: white; }
+    .btn-nav {
+      padding: 8px 16px;
+      background: #4299e1;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-nav:hover { background: #3182ce; }
+    .btn-logout {
+      padding: 8px 16px;
+      background: #e53e3e;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .btn-logout:hover { background: #c53030; }
     .header {
       background: white;
       padding: 30px;
@@ -220,6 +279,21 @@
 </head>
 <body>
   <div class="container">
+    <!-- Navbar -->
+    <nav class="navbar">
+      <div class="navbar-brand">Land Cover Validation</div>
+      <div class="navbar-right">
+        <div class="user-info">
+          <span><%= user.full_name %></span>
+          <span class="role-badge role-<%= user.role %>"><%= user.role %></span>
+        </div>
+        <% if (user.role === 'admin') { %>
+          <a href="/users" class="btn-nav">Manage Users</a>
+        <% } %>
+        <a href="/logout" class="btn-logout">Logout</a>
+      </div>
+    </nav>
+
     <div class="header">
       <h1>Land Cover Validation Dashboard</h1>
       <p class="subtitle">SoilFER Project - Multi-Country Validation Interface</p>

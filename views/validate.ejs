@@ -77,9 +77,66 @@
             object-fit: contain;
             margin: auto;
         }
+        /* Navbar styles */
+        .navbar {
+            background: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .navbar-brand { font-size: 16px; font-weight: 600; color: #2c5282; }
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: #f7fafc;
+            border-radius: 6px;
+        }
+        .role-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .role-admin { background: #c53030; color: white; }
+        .role-validator { background: #2b6cb0; color: white; }
+        .role-viewer { background: #38a169; color: white; }
+        .btn-nav {
+            padding: 6px 14px;
+            background: #4299e1;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 13px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-nav:hover { background: #3182ce; }
     </style>
 </head>
 <body class="bg-slate-900 h-screen w-screen overflow-hidden font-sans text-slate-200">
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-brand">Validating: <%= record.siteId %></div>
+        <div class="navbar-right">
+            <div class="user-info">
+                <span style="font-size: 13px; color: #2d3748;"><%= user.full_name %></span>
+                <span class="role-badge role-<%= user.role %>"><%= user.role %></span>
+            </div>
+            <a href="/?per_page=<%= typeof perPage !== 'undefined' ? perPage : '20' %>" class="btn-nav">← Back to Dashboard</a>
+        </div>
+    </nav>
 
     <!-- Fullscreen Photo Modal -->
     <div id="photoModal" class="photo-modal items-center justify-center" onclick="closeModal()">
@@ -324,13 +381,13 @@
                             placeholder="Optional notes..."><%= record.comments || '' %></textarea>
                     </div>
 
-                    <!-- Validator Name (Required) -->
+                    <!-- Validator Name (Auto-filled from session) -->
                     <div>
-                        <label class="text-[10px] uppercase font-bold text-slate-900 mb-1 block">Validator Name: <span class="text-red-600">*</span></label>
-                        <input type="text" name="validatorName" id="validatorNameInput" required
-                            class="w-full text-xs p-2 border border-slate-300 rounded bg-white text-slate-900 focus:ring-2 focus:ring-indigo-300 outline-none font-medium"
-                            placeholder="Enter your name..."
-                            value="<%= (typeof isEditMode !== 'undefined' && isEditMode && record.existingValidation.validatorName) ? record.existingValidation.validatorName : '' %>">
+                        <label class="text-[10px] uppercase font-bold text-slate-900 mb-1 block">Validator Name:</label>
+                        <input type="text" name="validatorName" id="validatorNameInput" readonly
+                            class="w-full text-xs p-2 border border-slate-300 rounded bg-slate-100 text-slate-700 font-medium cursor-not-allowed"
+                            value="<%= user.full_name %>">
+                        <p class="text-[9px] text-slate-500 mt-0.5">Auto-filled from your login</p>
                     </div>
 
                     <!-- Submit Button -->

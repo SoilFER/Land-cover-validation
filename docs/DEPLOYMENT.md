@@ -49,7 +49,7 @@ Complete guide for deploying the Land Cover Validation System.
 ### 1. Clone and Setup
 
 ```bash
-git clone https://github.com/[your-username]/Land-cover-validation.git
+git clone https://github.com/SoilFER/Land-cover-validation.git
 cd Land-cover-validation
 
 # Create environment file
@@ -187,7 +187,7 @@ sudo chown $USER:$USER /opt/land-cover-validation
 cd /opt/land-cover-validation
 
 # Clone
-git clone https://github.com/[your-username]/Land-cover-validation.git .
+git clone https://github.com/SoilFER/Land-cover-validation.git .
 ```
 
 ### 3. Configure for Production

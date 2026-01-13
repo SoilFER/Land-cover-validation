@@ -111,6 +111,9 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+// Trust proxy (required for Traefik/Cloudflare)
+app.set('trust proxy', 1);
+
 // Session middleware (MUST be before routes)
 // Security: httpOnly prevents XSS, secure flag for HTTPS, session timeout configured
 app.use(session({
@@ -118,11 +121,12 @@ app.use(session({
   resave: false, // Don't save session if unmodified
   saveUninitialized: false, // Don't create session until something stored
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    secure: false, // Set to false when behind reverse proxy (Traefik handles HTTPS)
     httpOnly: true, // Prevents client-side JS access to cookies (XSS protection)
     maxAge: CONFIG.SESSION_TIMEOUT, // 8 hours default
-    sameSite: 'strict' // CSRF protection
-  }
+    sameSite: 'lax' // Changed from 'strict' to 'lax' to allow redirects
+  },
+  proxy: true // Trust the reverse proxy (Traefik)
 }));
 
 // Servir archivos estáticos desde /photos

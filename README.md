@@ -41,6 +41,14 @@ A comprehensive system for validating land cover classifications collected throu
 - **Edit mode** for re-validating already-processed sites
 - **Two-tab interface**: Pending Validations vs Validated Sites
 
+### 🔐 Authentication & Access Control
+- **Role-Based Access Control (RBAC)**: Admin, Validator, Viewer roles
+- **Country-Based Access**: Validators restricted to assigned countries
+- **Secure Authentication**: bcrypt password hashing, httpOnly cookies
+- **Session Management**: 8-hour timeout, proxy-aware (Traefik/Cloudflare)
+- **User Management**: Admin panel for creating/editing users and permissions
+- **Auto-filled Validator Names**: Automatically populated from session data
+
 ### 🌐 Multi-Country Support
 - **Flexible data structures**: Array-based and flat schemas
 - **Percentage handling**: Direct values and range parsing (e.g., "90_100" → 100)
@@ -149,15 +157,38 @@ chmod 600 ./secrets/credentials.json
 npm install
 ```
 
-### 5. Run Locally (Development)
+### 5. Setup Authentication
+
+**Generate a secure session secret:**
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+**Add to `.env` file:**
+
+```bash
+SESSION_SECRET=<paste-generated-secret-here>
+SESSION_TIMEOUT=28800000  # 8 hours
+```
+
+**Create the first admin user:**
+
+```bash
+node init-admin.js
+```
+
+Follow the prompts to create your administrator account. See [SETUP-AUTH-REVISED.md](SETUP-AUTH-REVISED.md) for detailed authentication setup.
+
+### 6. Run Locally (Development)
 
 ```bash
 npm start
 ```
 
-Dashboard available at: `http://localhost:3000`
+Dashboard available at: `http://localhost:3000` (will redirect to `/login`)
 
-### 6. Deploy with Docker
+### 7. Deploy with Docker
 
 ```bash
 # Build and run
@@ -179,6 +210,10 @@ curl http://localhost:3000/health
 - **[API.md](docs/API.md)** - API endpoints and usage
 - **[TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[SYSTEM_DOCUMENTATION.md](docs/SYSTEM_DOCUMENTATION.md)** - Comprehensive technical docs
+
+### Authentication Documentation
+- **[SETUP-AUTH-REVISED.md](SETUP-AUTH-REVISED.md)** - Quick setup guide for authentication (5 minutes)
+- **[README-AUTH-REVISED.md](README-AUTH-REVISED.md)** - Complete authentication documentation
 
 ### n8n Workflows
 - **[n8n/README.md](n8n/README.md)** - Workflow setup and configuration

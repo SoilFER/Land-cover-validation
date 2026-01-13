@@ -1148,9 +1148,9 @@ app.get('/validate/:uuid', attachUserToLocals, requireAuth, async (req, res) => 
 
     if (!record) return res.status(404).send('Record not found');
 
-    // Country-based access control: Check if user has access to this record's country
+    // Country-based access control: Only enforce for validators (viewers/guests can see all countries)
     const recordCountryCode = safeGet(record, colIndex, 'country_code');
-    if (!hasCountryAccess(req.session.user, recordCountryCode)) {
+    if (req.session.user.role === 'validator' && !hasCountryAccess(req.session.user, recordCountryCode)) {
       return res.status(403).send(`Forbidden: You do not have access to validate records for ${recordCountryCode}`);
     }
 

@@ -103,7 +103,7 @@ A comprehensive system for validating land cover classifications collected throu
 | Country | Code | Status | Form Structure | Records |
 |---------|------|--------|----------------|---------|
 | 🇬🇹 Guatemala | GTM | ✅ Active | Array + Flat | ~1,600 |
-| 🇭🇳 Honduras | HND | 🟡 Planned | TBD | - |
+| 🇭🇳 Honduras | HND | 🔄 In Process | Array-based | ~1,300 |
 | 🇹🇳 Tunisia | TUN | ✅ Active | Flat (3 components) | ~1,700 |
 | 🇲🇿 Mozambique | MOZ | 🟡 Planned | TBD | - |
 | 🇬🇭 Ghana | GHA | 🟡 Planned | TBD | - |

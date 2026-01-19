@@ -36,7 +36,11 @@ A comprehensive system for validating land cover classifications collected throu
 - **4-directional ground photos** (North, East, South, West)
 - **Comprehensive site information** with GPS coordinates, landform, surveyor details
 - **Multi-component classification** support (up to 4 vegetation layers)
-- **Country-specific crop dropdowns** with localized options
+- **3-level hierarchical classification** system for ALL land cover types:
+  - Level 1: Primary land cover class (Cropland, Forest, Grassland, Settlement, Water, etc.)
+  - Level 2: Subcategory (e.g., Natural/Artificial for grasslands, Cereals/Legumes for crops)
+  - Level 3: Detailed classification (e.g., specific crop types, tree species)
+- **Country-specific classification options** with localized terminology
 - **Pagination & filtering** (20/50/100 records per page, 7 countries)
 - **Edit mode** for re-validating already-processed sites
 - **Two-tab interface**: Pending Validations vs Validated Sites
@@ -56,7 +60,10 @@ A comprehensive system for validating land cover classifications collected throu
 - **Percentage handling**: Direct values and range parsing (e.g., "90_100" → 100)
 - **Vegetation types**: Herbaceous, shrubs, trees with height/water supply
 - **Non-vegetated surfaces**: Bare soil, water, artificial surfaces
-- **Localized crop lists**: Country-specific agricultural categories
+- **Comprehensive hierarchical classification**:
+  - **Guatemala (GTM)**: Detailed crop types (Granos, Agroforestal, Frutal, Agroindustrial), forest types (Natural: Mixto/Conífera/Latifoliado, Plantación: Pino/Teca/Ciprés), grasslands (Natural/Artificial), settlements (Invernadero/Huerto/Vivero)
+  - **Honduras (HND)**: Same structure as Guatemala with country-specific variations
+  - **Tunisia (TUN)**: Cereals, tree crops (olives, dates, citrus), legumes, vegetables with localized naming
 
 ---
 
@@ -362,11 +369,34 @@ Licensed under CC BY 4.0
 
 ## 🗺️ Project Status
 
-- **Version**: 1.0.0
+- **Version**: 1.1.0
 - **Status**: Active Development
 - **Last Updated**: January 2026
 - **Countries Live**: 2/7 (GTM, TUN)
 - **Records Processed**: ~3,300+
+- **Latest Feature**: 3-level hierarchical classification for all land cover types
+
+## 📝 Changelog
+
+### Version 1.1.0 (January 19, 2026)
+**Feature: Universal Hierarchical Classification System**
+
+- ✨ **Expanded hierarchical classification to ALL land cover types** (previously only Cropland)
+- 🌳 **New classification levels**:
+  - **Forests**: Natural (Mixto, Conífera, Latifoliado) / Plantación (Pino, Teca, Ciprés, Palo Blanco)
+  - **Grasslands**: Natural / Artificial with subcategories
+  - **Settlements**: Invernadero, Huerto, Vivero, and other types
+  - **All other classes**: Water, Wetland, Bare Soil, Shrubland, Arable land, Other
+- 🔄 **Dynamic UI updates**: System now automatically pre-selects Level 1 category based on primary or corrected classification
+- 🌍 **Country-specific configurations**: Complete 3-level hierarchies for GTM, HND, and TUN
+- 📊 **Enhanced data granularity**: More detailed classification for improved land cover analysis
+- 🎯 **Improved user experience**: Clear labels ("Hierarchical Classification", "Land Cover Class", "Subcategory", "Detail")
+
+**Technical Changes**:
+- Updated `crops.json` with comprehensive structure for all 10 land cover classes
+- Modified `validate.ejs` UI to support universal hierarchical selection
+- Enhanced JavaScript logic to handle all land cover types dynamically
+- Added automatic category pre-selection based on validation decision
 
 ---
 

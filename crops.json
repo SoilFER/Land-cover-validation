@@ -1,2 +1,83 @@
-{"Country":"GTM","crops":["Maíz","Frijol Phaseolus","Arroz","Papa (Patata)","Bananas y plátanos","Trigo","Tomate","Cebolla","Chayote","Yuca","Arveja","Calabaza/Güicoy","Cítricos","Aguacate","Sorgo","Otro"]}
-{"Country":"TUN","crops":["wheat","barley","olives","tomato","date_palm","white_potato","onion","pepper","chickpea","fava__bean","sorghum","citrus","almond_trees","apple_trees","watermelons","Other"]}
+{
+  "GTM": {
+    "cropland": {
+      "label": "Cropland",
+      "level2": {
+        "cereals": {
+          "label": "Cereals",
+          "level3": ["wheat", "barley", "maize", "rice", "sorghum", "other_cereals"]
+        },
+        "legumes": {
+          "label": "Legumes",
+          "level3": ["fava_bean", "chickpea", "lentils", "common_bean", "other_legumes"]
+        },
+        "vegetables": {
+          "label": "Vegetables",
+          "level3": ["tomato", "onion", "pepper", "white_potato", "chayote", "pumpkin", "other_vegetables"]
+        },
+        "orchards": {
+          "label": "Orchards",
+          "level3": ["almond_trees", "apple_trees", "citrus", "avocado", "pomegranate", "other_orchards"]
+        },
+        "mixed_crops": {
+          "label": "Mixed Crops",
+          "level3": ["cereals_legumes", "vegetables_cereals", "multiple_crops", "other_mixed"]
+        }
+      }
+    }
+  },
+  "TUN": {
+    "cropland": {
+      "label": "Cropland",
+      "level2": {
+        "cereals": {
+          "label": "Cereals",
+          "level3": ["wheat", "barley", "sorghum", "other_cereals"]
+        },
+        "legumes": {
+          "label": "Legumes",
+          "level3": ["fava_bean", "chickpea", "other_legumes"]
+        },
+        "vegetables": {
+          "label": "Vegetables",
+          "level3": ["tomato", "onion", "pepper", "white_potato", "watermelons", "other_vegetables"]
+        },
+        "orchards": {
+          "label": "Orchards",
+          "level3": ["almond_trees", "apple_trees", "citrus", "date_palm", "olives", "pomegranate", "other_orchards"]
+        },
+        "mixed_crops": {
+          "label": "Mixed Crops",
+          "level3": ["cereals_legumes", "vegetables_cereals", "multiple_crops", "other_mixed"]
+        }
+      }
+    }
+  },
+  "HND": {
+    "cropland": {
+      "label": "Cropland",
+      "level2": {
+        "cereals": {
+          "label": "Cereals",
+          "level3": ["wheat", "barley", "maize", "rice", "sorghum", "other_cereals"]
+        },
+        "legumes": {
+          "label": "Legumes",
+          "level3": ["fava_bean", "common_bean", "other_legumes"]
+        },
+        "vegetables": {
+          "label": "Vegetables",
+          "level3": ["tomato", "onion", "pepper", "white_potato", "other_vegetables"]
+        },
+        "orchards": {
+          "label": "Orchards",
+          "level3": ["citrus", "avocado", "banana_plantain", "other_orchards"]
+        },
+        "mixed_crops": {
+          "label": "Mixed Crops",
+          "level3": ["cereals_legumes", "vegetables_cereals", "multiple_crops", "other_mixed"]
+        }
+      }
+    }
+  }
+}

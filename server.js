@@ -1229,6 +1229,8 @@ app.post('/save', attachUserToLocals, requireAuth, requireRole(['admin', 'valida
       rowNumber,
       validation,
       correctedClassification,
+      finalClassification: finalClassificationFromForm,
+      landCoverGroup,
       mainCropType,
       comments,
       returnPerPage
@@ -1314,7 +1316,8 @@ app.post('/save', attachUserToLocals, requireAuth, requireRole(['admin', 'valida
     const updates = [
       { col: 'validation_status', value: validationStatus },
       { col: 'is_correct', value: isCorrect },
-      { col: 'final_classification', value: finalClassification },
+      { col: 'final_classification', value: finalClassificationFromForm || finalClassification },
+      { col: 'land_cover_group', value: landCoverGroup || '' },
       { col: 'main_crop_type', value: mainCropType || '' },
       { col: 'corrected_classification', value: correctedClassification || '' },
       { col: 'validator_comments', value: comments || '' },

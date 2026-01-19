@@ -369,13 +369,13 @@
                         </select>
                     </div>
 
-                    <!-- Hierarchical Crop Type Panel (3 Levels) -->
+                    <!-- Hierarchical Classification Panel (3 Levels) -->
                     <div id="cropTypePanel" class="hidden space-y-2">
-                        <label class="text-[10px] uppercase font-bold text-amber-700 mb-1 block">Crop Classification:</label>
+                        <label class="text-[10px] uppercase font-bold text-amber-700 mb-1 block">Hierarchical Classification:</label>
 
-                        <!-- Level 1: General Category (e.g., Cropland) -->
+                        <!-- Level 1: General Category (e.g., Cropland, Forest, etc.) -->
                         <div>
-                            <label class="text-[9px] text-amber-600 block mb-0.5">Level 1 - General:</label>
+                            <label class="text-[9px] text-amber-600 block mb-0.5">Level 1 - Land Cover Class:</label>
                             <select id="cropLevel1" class="w-full text-xs p-2 border border-amber-300 rounded bg-amber-50 text-slate-900 focus:ring-2 focus:ring-amber-200 outline-none font-medium">
                                 <option value="">Select category...</option>
                                 <% if (typeof cropsHierarchical !== 'undefined' && Object.keys(cropsHierarchical).length > 0) { %>
@@ -386,19 +386,19 @@
                             </select>
                         </div>
 
-                        <!-- Level 2: Crop Type (e.g., Cereals, Legumes) -->
+                        <!-- Level 2: Subcategory (e.g., Cereals, Natural, Plantación) -->
                         <div id="cropLevel2Container" class="hidden">
-                            <label class="text-[9px] text-amber-600 block mb-0.5">Level 2 - Crop Type:</label>
+                            <label class="text-[9px] text-amber-600 block mb-0.5">Level 2 - Subcategory:</label>
                             <select id="cropLevel2" class="w-full text-xs p-2 border border-amber-300 rounded bg-amber-50 text-slate-900 focus:ring-2 focus:ring-amber-200 outline-none font-medium">
-                                <option value="">Select crop type...</option>
+                                <option value="">Select subcategory...</option>
                             </select>
                         </div>
 
-                        <!-- Level 3: Crop Detail (e.g., Wheat, Barley) -->
+                        <!-- Level 3: Detail (e.g., Wheat, Mixto, Pino) -->
                         <div id="cropLevel3Container" class="hidden">
-                            <label class="text-[9px] text-amber-600 block mb-0.5">Level 3 - Crop Detail:</label>
+                            <label class="text-[9px] text-amber-600 block mb-0.5">Level 3 - Detail:</label>
                             <select name="mainCropType" id="cropLevel3" class="w-full text-xs p-2 border border-amber-300 rounded bg-amber-50 text-slate-900 focus:ring-2 focus:ring-amber-200 outline-none font-medium">
-                                <option value="">Select crop...</option>
+                                <option value="">Select detail...</option>
                             </select>
                         </div>
 
@@ -546,27 +546,48 @@
 
         function checkCropRequirement() {
             const decision = document.getElementById('inputValidation').value;
-            const primaryClass = "<%= record.primaryClass %>".toLowerCase();
+            const primaryClass = "<%= record.primaryClass %>".toLowerCase().replace(/ /g, '_');
             const correctedClass = document.getElementById('correctionSelect').value.toLowerCase();
 
             const cropPanel = document.getElementById('cropTypePanel');
             const cropLevel3 = document.getElementById('cropLevel3');
             const submitBtn = document.getElementById('submitBtn');
+            const cropLevel1 = document.getElementById('cropLevel1');
 
-            let showCrop = false;
+            let showHierarchy = false;
+            let classToUse = '';
 
-            if (decision === 'correct' && primaryClass.includes('cropland')) {
-                showCrop = true;
-            } else if (decision === 'incorrect' && correctedClass === 'cropland') {
-                showCrop = true;
+            // Show hierarchical classification for ANY land cover class
+            if (decision === 'correct') {
+                // If classification is correct, use primary class and show hierarchy
+                showHierarchy = true;
+                classToUse = primaryClass;
+            } else if (decision === 'incorrect' && correctedClass) {
+                // If incorrect and a corrected class is selected, use corrected class and show hierarchy
+                showHierarchy = true;
+                classToUse = correctedClass;
             }
 
-            if (showCrop) {
+            if (showHierarchy) {
                 cropPanel.classList.remove('hidden');
                 cropLevel3.required = true;
                 submitBtn.disabled = true;
-                // Reset all dropdowns when showing crop panel
+                // Reset all dropdowns when showing hierarchy panel
                 resetCropSelections();
+
+                // Pre-select the appropriate level 1 category
+                if (classToUse && cropLevel1) {
+                    // Try to find matching option in level 1
+                    const options = cropLevel1.options;
+                    for (let i = 0; i < options.length; i++) {
+                        if (options[i].value === classToUse) {
+                            cropLevel1.value = classToUse;
+                            // Trigger change event to populate level 2
+                            cropLevel1.dispatchEvent(new Event('change'));
+                            break;
+                        }
+                    }
+                }
             } else {
                 cropPanel.classList.add('hidden');
                 cropLevel3.required = false;
@@ -605,8 +626,8 @@
             document.getElementById('cropLevel1Value').value = level1Value;
 
             // Reset level 2 and 3
-            level2Select.innerHTML = '<option value="">Select crop type...</option>';
-            document.getElementById('cropLevel3').innerHTML = '<option value="">Select crop...</option>';
+            level2Select.innerHTML = '<option value="">Select subcategory...</option>';
+            document.getElementById('cropLevel3').innerHTML = '<option value="">Select detail...</option>';
             level3Container.classList.add('hidden');
 
             if (level1Value && cropsHierarchicalData[level1Value]) {
@@ -639,7 +660,7 @@
             document.getElementById('cropLevel2Value').value = level2Value;
 
             // Reset level 3
-            level3Select.innerHTML = '<option value="">Select crop...</option>';
+            level3Select.innerHTML = '<option value="">Select detail...</option>';
 
             if (level1Value && level2Value && cropsHierarchicalData[level1Value]) {
                 const level2Data = cropsHierarchicalData[level1Value].level2;

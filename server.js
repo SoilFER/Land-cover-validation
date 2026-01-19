@@ -28,6 +28,8 @@ const CONFIG = {
   API_KEY: process.env.API_KEY || 'your-secure-api-key-here',
   // Path to crops configuration
   CROPS_PATH: './crops.json',
+  // Path to hierarchical crops configuration
+  CROPS_HIERARCHICAL_PATH: './crops_hierarchical.json',
   // Path to users database (JSON file)
   USERS_DB_PATH: './secrets/users.json',
   // Session configuration
@@ -51,6 +53,18 @@ try {
   console.log('Crops data loaded:', Object.keys(CROPS_DATA));
 } catch (error) {
   console.error('Error loading crops.json:', error.message);
+}
+
+// ============================================
+// LOAD HIERARCHICAL CROPS DATA
+// ============================================
+let CROPS_HIERARCHICAL = {};
+try {
+  const hierarchicalRaw = fs.readFileSync(CONFIG.CROPS_HIERARCHICAL_PATH, 'utf8');
+  CROPS_HIERARCHICAL = JSON.parse(hierarchicalRaw);
+  console.log('Hierarchical crops data loaded:', Object.keys(CROPS_HIERARCHICAL));
+} catch (error) {
+  console.error('Error loading crops_hierarchical.json:', error.message);
 }
 
 // ============================================
@@ -1210,6 +1224,9 @@ app.get('/validate/:uuid', attachUserToLocals, requireAuth, async (req, res) => 
     // Get crops for this country
     const crops = CROPS_DATA[countryCode] || [];
 
+    // Get hierarchical crops for this country
+    const cropsHierarchical = CROPS_HIERARCHICAL[countryCode] || {};
+
     // Determine if this is edit mode (record has been validated)
     const isEditMode = recordData.existingValidation.status &&
                        recordData.existingValidation.status !== 'PENDING';
@@ -1217,6 +1234,7 @@ app.get('/validate/:uuid', attachUserToLocals, requireAuth, async (req, res) => 
     res.render('validate', {
       record: recordData,
       crops: crops,
+      cropsHierarchical: cropsHierarchical,
       isEditMode: isEditMode,
       perPage: per_page || '20'
     });

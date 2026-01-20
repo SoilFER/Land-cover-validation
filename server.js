@@ -1228,7 +1228,6 @@ app.post('/save', attachUserToLocals, requireAuth, requireRole(['admin', 'valida
     const {
       rowNumber,
       validation,
-      correctedClassification,
       finalClassification: finalClassificationFromForm,
       landCoverGroup,
       mainCropType,
@@ -1277,25 +1276,24 @@ app.post('/save', attachUserToLocals, requireAuth, requireRole(['admin', 'valida
     if (validation === 'correct') {
       validationStatus = 'VALIDATED';
       isCorrect = 'YES';
-      // When marking as correct, use land_cover_types if available, otherwise primary_classification
-      // In your workflow, the classification data goes to primary_classification
-      finalClassification = landCoverTypes || primaryClassification;
+      // Use the hierarchical classification from Level 1 (finalClassificationFromForm)
+      finalClassification = finalClassificationFromForm;
 
-      // Data quality check: at least one classification field should have a value
+      // Data quality check: finalClassification must be provided
       if (!finalClassification) {
-        console.error(`CRITICAL DATA QUALITY ISSUE: Both land_cover_types and primary_classification are empty for row ${rowNumber}`);
-        throw new Error(`Cannot validate as correct: No classification found in row ${rowNumber}. Please fix source data.`);
+        console.error(`ERROR: No hierarchical classification provided for row ${rowNumber}`);
+        throw new Error('Hierarchical classification (Level 1) is required when marking as correct');
       }
     } else if (validation === 'incorrect') {
       validationStatus = 'CORRECTED';
       isCorrect = 'NO';
-      // When marking as incorrect, validator provides correct classification
-      finalClassification = correctedClassification;
+      // When marking as incorrect, validator provides correct classification via hierarchical selection
+      finalClassification = finalClassificationFromForm;
 
-      // Validation: correctedClassification must be provided when marking incorrect
+      // Validation: finalClassification must be provided when marking incorrect
       if (!finalClassification) {
-        console.error(`ERROR: No corrected classification provided for row ${rowNumber}`);
-        throw new Error('Corrected classification is required when marking as incorrect');
+        console.error(`ERROR: No hierarchical classification provided for row ${rowNumber}`);
+        throw new Error('Hierarchical classification (Level 1) is required when marking as incorrect');
       }
     } else if (validation === 'unclear') {
       validationStatus = 'NEEDS_REVIEW';
@@ -1319,7 +1317,6 @@ app.post('/save', attachUserToLocals, requireAuth, requireRole(['admin', 'valida
       { col: 'final_classification', value: finalClassificationFromForm || finalClassification },
       { col: 'land_cover_group', value: landCoverGroup || '' },
       { col: 'main_crop_type', value: mainCropType || '' },
-      { col: 'corrected_classification', value: correctedClassification || '' },
       { col: 'validator_comments', value: comments || '' },
       { col: 'validator_name', value: validatorName },
       { col: 'validation_date', value: new Date().toISOString() }

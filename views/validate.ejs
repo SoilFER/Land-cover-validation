@@ -352,23 +352,6 @@
                         </button>
                     </div>
 
-                    <!-- Correction Panel -->
-                    <div id="correctionPanel" class="hidden space-y-2">
-                        <label class="text-[10px] uppercase font-bold text-red-700 mb-1 block">Correct Category:</label>
-                        <select id="correctionSelect" name="correctedClassification" onchange="checkCropRequirement()" class="w-full text-xs p-2 border border-red-300 rounded bg-red-50 text-slate-900 focus:ring-2 focus:ring-red-200 outline-none font-medium">
-                            <option value="">Select correct class...</option>
-                            <option value="cropland">Cropland</option>
-                            <option value="grassland">Grassland</option>
-                            <option value="forest">Forest</option>
-                            <option value="shrubland">Shrubland</option>
-                            <option value="bare_soil">Bare Soil</option>
-                            <option value="water">Water</option>
-                            <option value="settlement">Settlement</option>
-                            <option value="wetland">Wetland</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-
                     <!-- Hierarchical Classification Panel (3 Levels) -->
                     <div id="cropTypePanel" class="hidden space-y-2">
                         <label class="text-[10px] uppercase font-bold text-amber-700 mb-1 block">Hierarchical Classification:</label>
@@ -525,18 +508,9 @@
             });
             btnElement.classList.add('ring-4', 'ring-blue-400');
 
-            const correctionPanel = document.getElementById('correctionPanel');
-            const submitBtn = document.getElementById('submitBtn');
-
-            if (decision === 'incorrect') {
-                correctionPanel.classList.remove('hidden');
-                document.getElementById('correctionSelect').required = true;
-                submitBtn.disabled = true;
-            } else {
-                correctionPanel.classList.add('hidden');
-                document.getElementById('correctionSelect').required = false;
-                checkCropRequirement();
-            }
+            // Always trigger hierarchical classification panel for correct/incorrect
+            // For "Review" option, no hierarchical classification is needed
+            checkCropRequirement();
         }
 
         // ============================================
@@ -547,7 +521,6 @@
         function checkCropRequirement() {
             const decision = document.getElementById('inputValidation').value;
             const primaryClass = "<%= record.primaryClass %>".toLowerCase().replace(/ /g, '_');
-            const correctedClass = document.getElementById('correctionSelect').value.toLowerCase();
 
             const cropPanel = document.getElementById('cropTypePanel');
             const cropLevel3 = document.getElementById('cropLevel3');
@@ -557,15 +530,20 @@
             let showHierarchy = false;
             let classToUse = '';
 
-            // Show hierarchical classification for ANY land cover class
+            // Show hierarchical classification for "correct" or "incorrect"
+            // For "unclear", allow direct submission without hierarchical classification
             if (decision === 'correct') {
                 // If classification is correct, use primary class and show hierarchy
                 showHierarchy = true;
                 classToUse = primaryClass;
-            } else if (decision === 'incorrect' && correctedClass) {
-                // If incorrect and a corrected class is selected, use corrected class and show hierarchy
+            } else if (decision === 'incorrect') {
+                // If incorrect, still show hierarchy but don't pre-select
+                // User must choose the correct classification from Level 1 dropdown
                 showHierarchy = true;
-                classToUse = correctedClass;
+                classToUse = ''; // Don't pre-select, let user choose
+            } else if (decision === 'unclear') {
+                // For "Review", no hierarchy needed - enable submit immediately
+                showHierarchy = false;
             }
 
             if (showHierarchy) {
@@ -575,7 +553,7 @@
                 // Reset all dropdowns when showing hierarchy panel
                 resetCropSelections();
 
-                // Pre-select the appropriate level 1 category
+                // Pre-select the appropriate level 1 category only if classToUse is set
                 if (classToUse && cropLevel1) {
                     // Try to find matching option in level 1
                     const options = cropLevel1.options;
@@ -704,19 +682,6 @@
                 }
             }
         }
-
-        document.getElementById('correctionSelect').addEventListener('change', function() {
-            const submitBtn = document.getElementById('submitBtn');
-            if (this.value) {
-                checkCropRequirement();
-                const cropPanel = document.getElementById('cropTypePanel');
-                if (cropPanel.classList.contains('hidden')) {
-                    submitBtn.disabled = false;
-                }
-            } else {
-                submitBtn.disabled = true;
-            }
-        });
 
         // ============================================
         // PHOTO MODAL

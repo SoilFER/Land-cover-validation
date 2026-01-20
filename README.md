@@ -36,10 +36,13 @@ A comprehensive system for validating land cover classifications collected throu
 - **4-directional ground photos** (North, East, South, West)
 - **Comprehensive site information** with GPS coordinates, landform, surveyor details
 - **Multi-component classification** support (up to 4 vegetation layers)
-- **3-level hierarchical classification** system for ALL land cover types:
-  - Level 1: Primary land cover class (Cropland, Forest, Grassland, Settlement, Water, etc.)
-  - Level 2: Subcategory (e.g., Natural/Artificial for grasslands, Cereals/Legumes for crops)
-  - Level 3: Detailed classification (e.g., specific crop types, tree species)
+- **Streamlined 3-level hierarchical classification** system:
+  - **Always used**: For both "Correct" and "Incorrect" validations
+  - **Level 1**: Primary land cover class from crops.json (country-specific)
+  - **Level 2**: Subcategory (e.g., Natural/Artificial, Cereals/Tree crops)
+  - **Level 3**: Detailed classification (e.g., specific crop types, tree species)
+  - **No redundancy**: Removed separate "Correct Category" dropdown
+  - **Smart pre-selection**: Level 1 auto-selected when marking as "Correct"
 - **Country-specific classification options** with localized terminology
 - **Pagination & filtering** (20/50/100 records per page, 7 countries)
 - **Edit mode** for re-validating already-processed sites
@@ -249,6 +252,31 @@ Unauthenticated users are automatically logged in as "Guest Viewer" with read-on
 ### Examples
 - **[examples/kobo-data-samples/](examples/kobo-data-samples/)** - Toy data examples (5 structures)
 
+### Validation Workflow
+- **[VALIDATION_LOGIC_EXPLAINED.md](VALIDATION_LOGIC_EXPLAINED.md)** - Complete validation logic documentation
+- **[VALIDATION_FLOW_DIAGRAM.txt](VALIDATION_FLOW_DIAGRAM.txt)** - Visual ASCII diagrams of validation process
+
+#### How Validation Works
+
+The validation process has been streamlined to use a unified hierarchical classification system:
+
+1. **View Site**: Validator examines satellite imagery and 4 ground photos
+2. **Make Decision**: Click one of three buttons:
+   - ✅ **Correct**: Classification is accurate → Level 1 auto-selected from primary class
+   - ❌ **Incorrect**: Classification needs correction → Choose correct class from Level 1 dropdown
+   - ⚠️ **Review**: Unclear from photos → Submit directly (no hierarchy needed)
+3. **Hierarchical Classification** (for Correct/Incorrect):
+   - **Level 1**: Land cover class (from crops.json - country-specific)
+   - **Level 2**: Subcategory (dynamically populated based on Level 1)
+   - **Level 3**: Detail (dynamically populated based on Level 2)
+4. **Submit**: Validation saved to Google Sheets with complete hierarchy
+
+**Key Points**:
+- No redundant dropdowns - one unified 3-level system
+- All Level 1 options come from `crops.json` (country-specific)
+- Smart pre-selection when marking as "Correct"
+- Consistent data structure for all validations
+
 ---
 
 ## 🔧 Configuration
@@ -369,14 +397,44 @@ Licensed under CC BY 4.0
 
 ## 🗺️ Project Status
 
-- **Version**: 1.1.0
+- **Version**: 1.2.0
 - **Status**: Active Development
 - **Last Updated**: January 2026
 - **Countries Live**: 2/7 (GTM, TUN)
 - **Records Processed**: ~3,300+
-- **Latest Feature**: 3-level hierarchical classification for all land cover types
+- **Latest Feature**: Simplified validation workflow with unified hierarchical classification
 
 ## 📝 Changelog
+
+### Version 1.2.0 (January 20, 2026)
+**Feature: Simplified Validation Workflow**
+
+- 🎯 **Removed redundant "Correct Category" dropdown** - Eliminated duplicate classification step
+- ✨ **Unified hierarchical classification** for both Correct and Incorrect validations:
+  - When marking as **Correct**: Level 1 auto-selected from primary classification
+  - When marking as **Incorrect**: User selects correct class directly from Level 1 dropdown
+  - Both paths use the same 3-level hierarchical system
+- 🌍 **All Level 1 categories from crops.json** - Country-specific land cover classes properly utilized
+- 📊 **Cleaner data structure**:
+  - Removed `corrected_classification` column (redundant with `final_classification`)
+  - All validations now use consistent hierarchical classification
+- 🗑️ **Removed obsolete files**: Deleted `crops_hierarchical.json` (duplicate of `crops.json`)
+- 🚀 **Improved user experience**:
+  - Simpler workflow with fewer decision points
+  - Less cognitive load for validators
+  - Faster validation process
+
+**Technical Changes**:
+- Updated `validate.ejs`: Removed correction panel, simplified JavaScript logic
+- Updated `server.js`: Removed `correctedClassification` field handling
+- Deleted redundant `crops_hierarchical.json` file
+- Added deployment scripts for local, git, and server deployment
+
+**Benefits**:
+- Reduced redundancy in UI and data collection
+- Consistent hierarchical classification for all validation decisions
+- Better alignment between primary classification and hierarchical system
+- Simplified codebase and maintenance
 
 ### Version 1.1.0 (January 19, 2026)
 **Feature: Universal Hierarchical Classification System**

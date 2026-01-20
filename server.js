@@ -530,6 +530,57 @@ function safeGet(row, colIndex, columnName, defaultValue = '') {
   return (value === undefined || value === null || value === '') ? defaultValue : value;
 }
 
+function normalizeFilterValue(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function parseDateFilter(value, isEndOfDay) {
+  if (!value) return null;
+  const timeSuffix = isEndOfDay ? 'T23:59:59.999' : 'T00:00:00';
+  const parsed = new Date(`${value}${timeSuffix}`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function applyRecordFilters(records, filters) {
+  const siteIdFilter = normalizeFilterValue(filters.siteId);
+  const provinceFilter = normalizeFilterValue(filters.province);
+  const primaryClassFilter = normalizeFilterValue(filters.primaryClass);
+  const uniqueTypesFilter = normalizeFilterValue(filters.uniqueTypes);
+  const componentsFilter = normalizeFilterValue(filters.components);
+
+  const dateFrom = parseDateFilter(filters.dateFrom, false);
+  const dateTo = parseDateFilter(filters.dateTo, true);
+
+  const componentsNumber = componentsFilter !== '' && !Number.isNaN(Number(componentsFilter))
+    ? Number(componentsFilter)
+    : null;
+
+  return records.filter((record) => {
+    if (siteIdFilter && !normalizeFilterValue(record.siteId).includes(siteIdFilter)) return false;
+    if (provinceFilter && !normalizeFilterValue(record.province).includes(provinceFilter)) return false;
+    if (primaryClassFilter && !normalizeFilterValue(record.primaryClass).includes(primaryClassFilter)) return false;
+    if (uniqueTypesFilter && !normalizeFilterValue(record.uniqueClassifications).includes(uniqueTypesFilter)) return false;
+
+    if (componentsFilter) {
+      const count = Number(record.componentCount || 0);
+      if (componentsNumber !== null) {
+        if (count !== componentsNumber) return false;
+      } else if (!normalizeFilterValue(record.componentCount).includes(componentsFilter)) {
+        return false;
+      }
+    }
+
+    if (dateFrom || dateTo) {
+      const recordDate = record.surveyDate ? new Date(record.surveyDate) : null;
+      if (!recordDate || Number.isNaN(recordDate.getTime())) return false;
+      if (dateFrom && recordDate < dateFrom) return false;
+      if (dateTo && recordDate > dateTo) return false;
+    }
+
+    return true;
+  });
+}
+
 // LÓGICA HÍBRIDA INTELIGENTE
 function processImageLink(rawValue) {
   if (!rawValue) return null;
@@ -954,6 +1005,15 @@ app.get('/', attachUserToLocals, requireAuth, async (req, res) => {
     const countryFilter = req.query.country || 'ALL';
     const page = parseInt(req.query.page) || 1;
     const perPage = parseInt(req.query.per_page) || 20;
+    const filters = {
+      dateFrom: req.query.date_from || '',
+      dateTo: req.query.date_to || '',
+      siteId: req.query.site_id || '',
+      province: req.query.province || '',
+      primaryClass: req.query.primary_class || '',
+      uniqueTypes: req.query.unique_types || '',
+      components: req.query.components || ''
+    };
 
     const auth = await getAuthClient();
     const sheets = google.sheets({ version: 'v4', auth });
@@ -964,7 +1024,16 @@ app.get('/', attachUserToLocals, requireAuth, async (req, res) => {
     });
 
     const rows = response.data.values || [];
-    if (rows.length === 0) return res.render('index', { records: [], stats: {}, countryFilter, pagination: {} });
+    if (rows.length === 0) {
+      return res.render('index', {
+        records: [],
+        stats: { total: 0, pending: 0, validated: 0, progress: 0 },
+        countryFilter,
+        pagination: { currentPage: page, totalPages: 1, perPage, totalRecords: 0, startIndex: 0, endIndex: 0 },
+        viewMode: 'pending',
+        filters
+      });
+    }
 
     const headers = rows[0];
     const dataRows = rows.slice(1);
@@ -976,6 +1045,7 @@ app.get('/', attachUserToLocals, requireAuth, async (req, res) => {
       countryCode: safeGet(row, colIndex, 'country_code'),
       siteId: safeGet(row, colIndex, 'site_id'),
       province: safeGet(row, colIndex, 'province'),
+      surveyDate: safeGet(row, colIndex, 'survey_date'),
       primaryClass: safeGet(row, colIndex, 'land_cover_types') || safeGet(row, colIndex, 'primary_classification'),
       uniqueClassifications: safeGet(row, colIndex, 'unique_classifications'),
       classificationCount: safeGet(row, colIndex, 'classification_count', 0),
@@ -989,9 +1059,10 @@ app.get('/', attachUserToLocals, requireAuth, async (req, res) => {
       allRecords = allRecords.filter(r => r.countryCode === countryFilter);
     }
 
-    const pendingRecords = allRecords.filter(r => r.validationStatus === 'PENDING');
+    const filteredRecords = applyRecordFilters(allRecords, filters);
+    const pendingRecords = filteredRecords.filter(r => r.validationStatus === 'PENDING');
 
-    const total = allRecords.length;
+    const total = filteredRecords.length;
     const pending = pendingRecords.length;
     const validated = total - pending;
     const progress = total > 0 ? Math.round((validated / total) * 100) : 0;
@@ -1006,6 +1077,7 @@ app.get('/', attachUserToLocals, requireAuth, async (req, res) => {
       records: paginatedRecords,
       stats: { total, pending, validated, progress },
       countryFilter,
+      filters,
       pagination: {
         currentPage: page,
         totalPages: totalPages,
@@ -1029,6 +1101,15 @@ app.get('/validated', attachUserToLocals, requireAuth, async (req, res) => {
     const countryFilter = req.query.country || 'ALL';
     const page = parseInt(req.query.page) || 1;
     const perPage = parseInt(req.query.per_page) || 20;
+    const filters = {
+      dateFrom: req.query.date_from || '',
+      dateTo: req.query.date_to || '',
+      siteId: req.query.site_id || '',
+      province: req.query.province || '',
+      primaryClass: req.query.primary_class || '',
+      uniqueTypes: req.query.unique_types || '',
+      components: req.query.components || ''
+    };
 
     const auth = await getAuthClient();
     const sheets = google.sheets({ version: 'v4', auth });
@@ -1039,7 +1120,16 @@ app.get('/validated', attachUserToLocals, requireAuth, async (req, res) => {
     });
 
     const rows = response.data.values || [];
-    if (rows.length === 0) return res.render('index', { records: [], stats: {}, countryFilter, pagination: {}, viewMode: 'validated' });
+    if (rows.length === 0) {
+      return res.render('index', {
+        records: [],
+        stats: { total: 0, pending: 0, validated: 0, progress: 0 },
+        countryFilter,
+        pagination: { currentPage: page, totalPages: 1, perPage, totalRecords: 0, startIndex: 0, endIndex: 0 },
+        viewMode: 'validated',
+        filters
+      });
+    }
 
     const headers = rows[0];
     const dataRows = rows.slice(1);
@@ -1051,7 +1141,11 @@ app.get('/validated', attachUserToLocals, requireAuth, async (req, res) => {
       countryCode: safeGet(row, colIndex, 'country_code'),
       siteId: safeGet(row, colIndex, 'site_id'),
       province: safeGet(row, colIndex, 'province'),
+      surveyDate: safeGet(row, colIndex, 'survey_date'),
       primaryClass: safeGet(row, colIndex, 'land_cover_types') || safeGet(row, colIndex, 'primary_classification'),
+      uniqueClassifications: safeGet(row, colIndex, 'unique_classifications'),
+      classificationCount: safeGet(row, colIndex, 'classification_count', 0),
+      componentCount: safeGet(row, colIndex, 'component_count', 0),
       finalClassification: safeGet(row, colIndex, 'final_classification'),
       validationStatus: safeGet(row, colIndex, 'validation_status'),
       validationDate: safeGet(row, colIndex, 'validation_date'),
@@ -1065,8 +1159,10 @@ app.get('/validated', attachUserToLocals, requireAuth, async (req, res) => {
       allRecords = allRecords.filter(r => r.countryCode === countryFilter);
     }
 
+    const filteredRecords = applyRecordFilters(allRecords, filters);
+
     // Filter only validated records (VALIDATED, CORRECTED, NEEDS_REVIEW)
-    const validatedRecords = allRecords.filter(r =>
+    const validatedRecords = filteredRecords.filter(r =>
       r.validationStatus === 'VALIDATED' ||
       r.validationStatus === 'CORRECTED' ||
       r.validationStatus === 'NEEDS_REVIEW'
@@ -1079,8 +1175,8 @@ app.get('/validated', attachUserToLocals, requireAuth, async (req, res) => {
       return dateB - dateA;
     });
 
-    const total = allRecords.length;
-    const pending = allRecords.filter(r => r.validationStatus === 'PENDING').length;
+    const total = filteredRecords.length;
+    const pending = filteredRecords.filter(r => r.validationStatus === 'PENDING').length;
     const validated = validatedRecords.length;
     const progress = total > 0 ? Math.round((validated / total) * 100) : 0;
 
@@ -1094,6 +1190,7 @@ app.get('/validated', attachUserToLocals, requireAuth, async (req, res) => {
       records: paginatedRecords,
       stats: { total, pending, validated, progress },
       countryFilter,
+      filters,
       pagination: {
         currentPage: page,
         totalPages: totalPages,

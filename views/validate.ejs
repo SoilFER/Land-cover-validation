@@ -215,13 +215,21 @@
         <!-- BOTTOM: Components Section (45% height) -->
         <div class="h-[45%] flex flex-col gap-2 p-2 bg-slate-100 rounded-lg">
 
+                <%
+                    const surveyDateLabel = record.surveyDate
+                        ? (() => {
+                            const parsed = new Date(record.surveyDate);
+                            return Number.isNaN(parsed.getTime()) ? record.surveyDate : parsed.toLocaleDateString();
+                        })()
+                        : 'N/A';
+                %>
                 <!-- Site Info Header -->
                 <div class="bg-gradient-to-br from-indigo-50 to-blue-50 px-3 py-2 rounded-lg border border-indigo-200">
                     <div class="flex justify-between items-center">
                         <div>
                             <h1 class="text-lg font-bold text-indigo-900"><%= record.siteId %></h1>
                             <div class="text-[9px] text-indigo-700 mt-0.5">
-                                <strong>PSU:</strong> <%= record.psuId %> | <strong>Province:</strong> <%= record.province %> | <strong>Surveyor:</strong> <%= record.surveyor %>
+                                <strong>PSU:</strong> <%= record.psuId %> | <strong>Province:</strong> <%= record.province %> | <strong>Site Date:</strong> <%= surveyDateLabel %> | <strong>Surveyor:</strong> <%= record.surveyor %>
                             </div>
                         </div>
                         <div class="text-right">

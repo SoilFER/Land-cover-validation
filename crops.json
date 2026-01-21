@@ -511,5 +511,149 @@
         }
       }
     }
+  },
+  "ZMB": {
+    "cropland": {
+      "label": "Cropland",
+      "level2": {
+        "cereal_crops": {
+          "label": "Cereal Crops",
+          "level3": ["maize", "wheat", "sorghum", "rice", "mixed_cereals", "other"]
+        },
+        "legumes": {
+          "label": "Legumes",
+          "level3": ["phaseolus_bean", "soybean", "cowpea", "groundnut", "other"]
+        },
+        "oilseed_crops": {
+          "label": "Oilseed Crops",
+          "level3": ["sunflower", "groundnut", "sesame", "other"]
+        },
+        "vegetables_melons": {
+          "label": "Vegetables & Melons",
+          "level3": ["tomato", "rape", "okra", "onion", "cabbage", "other"]
+        },
+        "fruit_nuts": {
+          "label": "Fruit & Nuts",
+          "level3": ["mango", "cashew", "groundnut", "banana", "pineapple", "other"]
+        },
+        "industrial_crops": {
+          "label": "Industrial Crops",
+          "level3": ["cotton", "tobacco", "other"]
+        },
+        "other": {
+          "label": "Other",
+          "level3": ["cassava", "sweet_potato", "other"]
+        }
+      }
+    },
+    "grassland": {
+      "label": "Grassland",
+      "level2": {
+        "natural": {
+          "label": "Natural",
+          "level3": ["other"]
+        },
+        "pasture": {
+          "label": "Pasture",
+          "level3": ["other"]
+        }
+      }
+    },
+    "forest": {
+      "label": "Forest",
+      "level2": {
+        "open_forest": {
+          "label": "Open Forest",
+          "level3": ["miombo", "mopane", "other"]
+        },
+        "closed_forest": {
+          "label": "Closed Forest",
+          "level3": ["other"]
+        }
+      }
+    },
+    "savanna": {
+      "label": "Savanna",
+      "level2": {
+        "wooded_savanna": {
+          "label": "Wooded Savanna",
+          "level3": ["other"]
+        },
+        "grassland_savanna": {
+          "label": "Grassland Savanna",
+          "level3": ["other"]
+        },
+        "other": {
+          "label": "Other",
+          "level3": ["other"]
+        }
+      }
+    },
+    "orchard": {
+      "label": "Orchard",
+      "level2": {
+        "fruit_orchard": {
+          "label": "Fruit Orchard",
+          "level3": ["mango", "banana", "pineapple", "other"]
+        },
+        "nut_orchard": {
+          "label": "Nut Orchard",
+          "level3": ["cashew", "other"]
+        },
+        "other": {
+          "label": "Other",
+          "level3": ["other"]
+        }
+      }
+    },
+    "wetland": {
+      "label": "Wetland",
+      "level2": {
+        "dambo": {
+          "label": "Dambo",
+          "level3": ["other"]
+        },
+        "other": {
+          "label": "Other",
+          "level3": ["other"]
+        }
+      }
+    },
+    "bare_soil": {
+      "label": "Bare Soil",
+      "level2": {
+        "other": {
+          "label": "Other",
+          "level3": ["other"]
+        }
+      }
+    },
+    "water": {
+      "label": "Water",
+      "level2": {
+        "other": {
+          "label": "Other",
+          "level3": ["other"]
+        }
+      }
+    },
+    "urban": {
+      "label": "Urban",
+      "level2": {
+        "other": {
+          "label": "Other",
+          "level3": ["other"]
+        }
+      }
+    },
+    "other": {
+      "label": "Other",
+      "level2": {
+        "other": {
+          "label": "Other",
+          "level3": ["other"]
+        }
+      }
+    }
   }
 }

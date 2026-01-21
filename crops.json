@@ -396,5 +396,120 @@
         }
       }
     }
+  },
+  "MOZ": {
+    "cropland": {
+      "label": "Cropland",
+      "level2": {
+        "cereal_crops": {
+          "label": "Cereal Crops",
+          "level3": ["maize", "rice", "sorghum", "wheat", "mixed_cereals", "other"]
+        },
+        "legumes": {
+          "label": "Legumes",
+          "level3": ["cowpea", "pigeon_pea", "beans", "groundnut", "other"]
+        },
+        "oilseed_crops": {
+          "label": "Oilseed Crops",
+          "level3": ["sesame", "sunflower", "groundnut", "other"]
+        },
+        "vegetables_melons": {
+          "label": "Vegetables & Melons",
+          "level3": ["okra", "tomato", "onion", "cabbage", "other"]
+        },
+        "fruit_nuts": {
+          "label": "Fruit & Nuts",
+          "level3": ["bananas", "mango", "cashew", "papaya", "coconut", "other"]
+        },
+        "other": {
+          "label": "Other",
+          "level3": ["cassava", "sweet_potato", "other"]
+        }
+      }
+    },
+    "grassland": {
+      "label": "Grassland",
+      "level2": {
+        "natural": {
+          "label": "Natural",
+          "level3": ["other"]
+        },
+        "pasture": {
+          "label": "Pasture",
+          "level3": ["other"]
+        }
+      }
+    },
+    "forest": {
+      "label": "Forest",
+      "level2": {
+        "open_forest": {
+          "label": "Open Forest",
+          "level3": ["miombo", "mopane", "other"]
+        },
+        "closed_forest": {
+          "label": "Closed Forest",
+          "level3": ["other"]
+        }
+      }
+    },
+    "shrubland": {
+      "label": "Shrubland",
+      "level2": {
+        "other": {
+          "label": "Other",
+          "level3": ["other"]
+        }
+      }
+    },
+    "wetland": {
+      "label": "Wetland",
+      "level2": {
+        "mangrove": {
+          "label": "Mangrove",
+          "level3": ["other"]
+        },
+        "other": {
+          "label": "Other",
+          "level3": ["other"]
+        }
+      }
+    },
+    "bare_soil": {
+      "label": "Bare Soil",
+      "level2": {
+        "other": {
+          "label": "Other",
+          "level3": ["other"]
+        }
+      }
+    },
+    "water": {
+      "label": "Water",
+      "level2": {
+        "other": {
+          "label": "Other",
+          "level3": ["other"]
+        }
+      }
+    },
+    "urban": {
+      "label": "Urban",
+      "level2": {
+        "other": {
+          "label": "Other",
+          "level3": ["other"]
+        }
+      }
+    },
+    "other": {
+      "label": "Other",
+      "level2": {
+        "other": {
+          "label": "Other",
+          "level3": ["other"]
+        }
+      }
+    }
   }
 }

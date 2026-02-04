@@ -3,33 +3,89 @@
     "cropland": {
       "label": "Cropland",
       "level2": {
-        "granos": {
-          "label": "Granos",
-          "level3": ["maiz", "frijol", "maiz_frijol", "sorgo"]
-        },
         "agroforestal": {
           "label": "Agroforestal",
-          "level3": ["cafe", "cardamomo"]
-        },
-        "cucurbitaceas": {
-          "label": "Cucurbitáceas",
-          "level3": ["pepino", "guicoy", "melon", "ayote", "sandia", "otro"]
-        },
-        "vegetales": {
-          "label": "Vegetales",
-          "level3": ["papa", "tomate", "cebolla", "ejote", "haba", "apio", "repollo", "brocoli", "coliflor", "otro"]
-        },
-        "frutal": {
-          "label": "Frutal",
-          "level3": ["aguacate", "mango", "limon", "macadamia", "jocote", "otro"]
+          "level3": [
+            "Café",
+            "Cardamomo",
+            "Other"
+          ]
         },
         "agroindustrial": {
           "label": "Agroindustrial",
-          "level3": ["cana_azucar", "palma_aceitera", "banano", "hule", "otro"]
+          "level3": [
+            "Banano",
+            "Caña Azucar",
+            "Hule",
+            "Palma Aceitera",
+            "Other"
+          ]
+        },
+        "cucurbitaceas": {
+          "label": "Cucurbitáceas",
+          "level3": [
+            "Ayote",
+            "Guicoy",
+            "Melón",
+            "Pepino",
+            "Sandía",
+            "Other"
+          ]
+        },
+        "frutal": {
+          "label": "Frutal",
+          "level3": [
+            "Aguacate",
+            "Guanaba",
+            "Jocote",
+            "Limón",
+            "Macadamia",
+            "Mango",
+            "Rambutan",
+            "Other"
+          ]
+        },
+        "granos": {
+          "label": "Granos",
+          "level3": [
+            "Cebada",
+            "Frijol",
+            "Maiz",
+            "Maiz-frijol",
+            "Sorgo",
+            "Maiz frijol guicoy",
+            "Other"
+          ]
         },
         "otro": {
           "label": "Otro",
-          "level3": ["maxan", "pacaya", "pina", "fresas", "moras", "flores", "otro"]
+          "level3": [
+            "Achiote",
+            "Flores",
+            "Fresas",
+            "Mashón/Maxan",
+            "Moras",
+            "Pacaya",
+            "Piña",
+            "Other"
+          ]
+        },
+        "vegetales": {
+          "label": "Vegetales",
+          "level3": [
+            "Apio",
+            "Brocoli",
+            "Cebolla",
+            "Coliflor",
+            "Ejote",
+            "Guisquil",
+            "Haba",
+            "Papa",
+            "Repollo",
+            "Tomate",
+            "Zanahoria",
+            "Other"
+          ]
         }
       }
     },
@@ -38,11 +94,15 @@
       "level2": {
         "natural": {
           "label": "Natural",
-          "level3": ["otro"]
+          "level3": [
+            "otro"
+          ]
         },
         "artificial": {
           "label": "Artificial",
-          "level3": ["otro"]
+          "level3": [
+            "otro"
+          ]
         }
       }
     },
@@ -51,11 +111,21 @@
       "level2": {
         "natural": {
           "label": "Natural",
-          "level3": ["mixto", "conifera", "latifoliado"]
+          "level3": [
+            "mixto",
+            "conifera",
+            "latifoliado"
+          ]
         },
         "plantacion": {
           "label": "Plantación",
-          "level3": ["pino", "teca", "cipres", "palo_blanco", "otro"]
+          "level3": [
+            "pino",
+            "teca",
+            "cipres",
+            "palo_blanco",
+            "otro"
+          ]
         }
       }
     },
@@ -64,7 +134,9 @@
       "level2": {
         "otro": {
           "label": "Otro",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -73,7 +145,9 @@
       "level2": {
         "otro": {
           "label": "Otro",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -82,7 +156,9 @@
       "level2": {
         "otro": {
           "label": "Otro",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -91,7 +167,9 @@
       "level2": {
         "otro": {
           "label": "Otro",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -100,19 +178,27 @@
       "level2": {
         "invernadero": {
           "label": "Invernadero",
-          "level3": ["otro"]
+          "level3": [
+            "otro"
+          ]
         },
         "huerto": {
           "label": "Huerto",
-          "level3": ["otro"]
+          "level3": [
+            "otro"
+          ]
         },
         "vivero": {
           "label": "Vivero",
-          "level3": ["otro"]
+          "level3": [
+            "otro"
+          ]
         },
         "otro": {
           "label": "Otro",
-          "level3": ["otro"]
+          "level3": [
+            "otro"
+          ]
         }
       }
     },
@@ -121,7 +207,9 @@
       "level2": {
         "otro": {
           "label": "Otro",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -130,7 +218,9 @@
       "level2": {
         "otro": {
           "label": "Otro",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     }
@@ -141,42 +231,52 @@
       "level2": {
         "cereals": {
           "label": "Cereals",
-          "level3": ["wheat", "barley", "maize", "sorghum", "other"]
+          "level3": [
+            "Wheat",
+            "Barley",
+            "Maize",
+            "Sorghum",
+            "Other"
+          ]
         },
         "tree_crops": {
           "label": "Tree Crops",
           "level3": [
-            "olives",
-            "date_palm",
-            "apple",
-            "pear",
-            "peach",
-            "apricot",
-            "fig",
-            "pomegranate",
-            "grapevine",
-            "almond_trees",
-            "orange",
-            "lemon",
-            "mandarin",
-            "other"
+            "Olives",
+            "Date palm",
+            "Apple",
+            "Pear",
+            "Peach",
+            "Apricot",
+            "Fig",
+            "Pomegranate",
+            "Grapevine",
+            "Almond trees",
+            "Orange",
+            "Lemon",
+            "Mandarine",
+            "Other"
           ]
         },
         "legumes": {
           "label": "Legumes",
-          "level3": ["chickpea", "fava_bean", "lentil", "dry_pea", "other"]
+          "level3": [
+            "Chickpea",
+            "Fava bean",
+            "Lentil",
+            "Dry pea",
+            "Other"
+          ]
         },
         "vegetables": {
           "label": "Vegetables",
-          "level3": ["tomato", "potato", "onion", "pepper", "other"]
-        },
-        "arable_land": {
-          "label": "Arable land",
-          "level3": ["other"]
-        },
-        "other": {
-          "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "Tomato",
+            "Potato",
+            "Onion",
+            "Pepper",
+            "Other"
+          ]
         }
       }
     },
@@ -185,7 +285,9 @@
       "level2": {
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -194,15 +296,21 @@
       "level2": {
         "open_forest": {
           "label": "Open forest",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         },
         "closed_forest": {
           "label": "Closed forest",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         },
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -211,7 +319,9 @@
       "level2": {
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -220,7 +330,9 @@
       "level2": {
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -229,7 +341,9 @@
       "level2": {
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -238,7 +352,9 @@
       "level2": {
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -247,7 +363,9 @@
       "level2": {
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -256,7 +374,9 @@
       "level2": {
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     }
@@ -267,31 +387,78 @@
       "level2": {
         "granos": {
           "label": "Granos",
-          "level3": ["maiz", "frijol", "maiz_frijol", "sorgo"]
+          "level3": [
+            "maiz",
+            "frijol",
+            "maiz_frijol",
+            "sorgo"
+          ]
         },
         "agroforestal": {
           "label": "Agroforestal",
-          "level3": ["cafe", "cardamomo"]
+          "level3": [
+            "cafe",
+            "cardamomo"
+          ]
         },
         "cucurbitaceas": {
           "label": "Cucurbitáceas",
-          "level3": ["pepino", "guicoy", "melon", "ayote", "sandia", "otro"]
+          "level3": [
+            "pepino",
+            "guicoy",
+            "melon",
+            "ayote",
+            "sandia",
+            "otro"
+          ]
         },
         "vegetales": {
           "label": "Vegetales",
-          "level3": ["papa", "tomate", "cebolla", "ejote", "haba", "apio", "repollo", "brocoli", "coliflor", "otro"]
+          "level3": [
+            "papa",
+            "tomate",
+            "cebolla",
+            "ejote",
+            "haba",
+            "apio",
+            "repollo",
+            "brocoli",
+            "coliflor",
+            "otro"
+          ]
         },
         "frutal": {
           "label": "Frutal",
-          "level3": ["aguacate", "mango", "limon", "macadamia", "jocote", "otro"]
+          "level3": [
+            "aguacate",
+            "mango",
+            "limon",
+            "macadamia",
+            "jocote",
+            "otro"
+          ]
         },
         "agroindustrial": {
           "label": "Agroindustrial",
-          "level3": ["cana_azucar", "palma_aceitera", "banano", "hule", "otro"]
+          "level3": [
+            "cana_azucar",
+            "palma_aceitera",
+            "banano",
+            "hule",
+            "otro"
+          ]
         },
         "otro": {
           "label": "Otro",
-          "level3": ["maxan", "pacaya", "pina", "fresas", "moras", "flores", "otro"]
+          "level3": [
+            "maxan",
+            "pacaya",
+            "pina",
+            "fresas",
+            "moras",
+            "flores",
+            "otro"
+          ]
         }
       }
     },
@@ -300,11 +467,15 @@
       "level2": {
         "natural": {
           "label": "Natural",
-          "level3": ["otro"]
+          "level3": [
+            "otro"
+          ]
         },
         "artificial": {
           "label": "Artificial",
-          "level3": ["otro"]
+          "level3": [
+            "otro"
+          ]
         }
       }
     },
@@ -313,11 +484,21 @@
       "level2": {
         "natural": {
           "label": "Natural",
-          "level3": ["mixto", "conifera", "latifoliado"]
+          "level3": [
+            "mixto",
+            "conifera",
+            "latifoliado"
+          ]
         },
         "plantacion": {
           "label": "Plantación",
-          "level3": ["pino", "teca", "cipres", "palo_blanco", "otro"]
+          "level3": [
+            "pino",
+            "teca",
+            "cipres",
+            "palo_blanco",
+            "otro"
+          ]
         }
       }
     },
@@ -326,7 +507,9 @@
       "level2": {
         "otro": {
           "label": "Otro",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -335,7 +518,9 @@
       "level2": {
         "otro": {
           "label": "Otro",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -344,7 +529,9 @@
       "level2": {
         "otro": {
           "label": "Otro",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -353,7 +540,9 @@
       "level2": {
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -362,19 +551,27 @@
       "level2": {
         "invernadero": {
           "label": "Invernadero",
-          "level3": ["otro"]
+          "level3": [
+            "otro"
+          ]
         },
         "huerto": {
           "label": "Huerto",
-          "level3": ["otro"]
+          "level3": [
+            "otro"
+          ]
         },
         "vivero": {
           "label": "Vivero",
-          "level3": ["otro"]
+          "level3": [
+            "otro"
+          ]
         },
         "otro": {
           "label": "Otro",
-          "level3": ["otro"]
+          "level3": [
+            "otro"
+          ]
         }
       }
     },
@@ -383,7 +580,9 @@
       "level2": {
         "otro": {
           "label": "Otro",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -392,7 +591,9 @@
       "level2": {
         "otro": {
           "label": "Otro",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     }
@@ -401,29 +602,76 @@
     "cropland": {
       "label": "Cropland",
       "level2": {
-        "cereal_crops": {
-          "label": "Cereal Crops",
-          "level3": ["maize", "rice", "sorghum", "wheat", "mixed_cereals", "other"]
+        "shrub_cultivation": {
+          "label": "Shrub Cultivation",
+          "level3": [
+            "Tea",
+            "Coffee",
+            "Other"
+          ]
+        },
+        "tree_crops": {
+          "label": "Tree Crops",
+          "level3": [
+            "Avocado",
+            "Banana",
+            "Citrus",
+            "Cashew nuts",
+            "Macadamia",
+            "Palm",
+            "Ziziphus",
+            "Mangoes",
+            "Other"
+          ]
+        },
+        "cereals": {
+          "label": "Cereals",
+          "level3": [
+            "Maize",
+            "Wheat",
+            "Sorghum",
+            "Millet",
+            "Rice",
+            "Other"
+          ]
         },
         "legumes": {
           "label": "Legumes",
-          "level3": ["cowpea", "pigeon_pea", "beans", "groundnut", "other"]
+          "level3": [
+            "Beans",
+            "Green grams",
+            "Pigeon peas",
+            "Soybeans",
+            "Other"
+          ]
         },
-        "oilseed_crops": {
-          "label": "Oilseed Crops",
-          "level3": ["sesame", "sunflower", "groundnut", "other"]
+        "oil_seed": {
+          "label": "Oil Seed",
+          "level3": [
+            "Sesame",
+            "Cashew nuts",
+            "Sunflower",
+            "Ricinus",
+            "Other"
+          ]
         },
-        "vegetables_melons": {
-          "label": "Vegetables & Melons",
-          "level3": ["okra", "tomato", "onion", "cabbage", "other"]
+        "cash_crop": {
+          "label": "Cash Crop",
+          "level3": [
+            "Sisal",
+            "Cotton",
+            "Tobacco",
+            "Other"
+          ]
         },
-        "fruit_nuts": {
-          "label": "Fruit & Nuts",
-          "level3": ["bananas", "mango", "cashew", "papaya", "coconut", "other"]
-        },
-        "other": {
-          "label": "Other",
-          "level3": ["cassava", "sweet_potato", "other"]
+        "vegetables": {
+          "label": "Vegetables",
+          "level3": [
+            "Pineapple",
+            "Horticulture",
+            "Watermelon",
+            "Other"
+          ]
         }
       }
     },
@@ -432,11 +680,15 @@
       "level2": {
         "natural": {
           "label": "Natural",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         },
         "pasture": {
           "label": "Pasture",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -445,11 +697,17 @@
       "level2": {
         "open_forest": {
           "label": "Open Forest",
-          "level3": ["miombo", "mopane", "other"]
+          "level3": [
+            "miombo",
+            "mopane",
+            "other"
+          ]
         },
         "closed_forest": {
           "label": "Closed Forest",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -458,7 +716,9 @@
       "level2": {
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -467,11 +727,15 @@
       "level2": {
         "mangrove": {
           "label": "Mangrove",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         },
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -480,7 +744,9 @@
       "level2": {
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -489,7 +755,9 @@
       "level2": {
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -498,7 +766,9 @@
       "level2": {
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -507,7 +777,9 @@
       "level2": {
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     }
@@ -516,33 +788,82 @@
     "cropland": {
       "label": "Cropland",
       "level2": {
-        "cereal_crops": {
-          "label": "Cereal Crops",
-          "level3": ["maize", "wheat", "sorghum", "rice", "mixed_cereals", "other"]
+        "tree_crops": {
+          "label": "Tree Crops",
+          "level3": [
+            "Mango",
+            "Avocado",
+            "Banana",
+            "Citrus",
+            "Papaya",
+            "Pineapple",
+            "Macadamia",
+            "Guava",
+            "Cashew nuts",
+            "Palm",
+            "Coffee",
+            "Tea",
+            "Other"
+          ]
+        },
+        "cereals": {
+          "label": "Cereals",
+          "level3": [
+            "Maize",
+            "Sorghum",
+            "Millet",
+            "Rice",
+            "Wheat",
+            "Barley",
+            "Other"
+          ]
         },
         "legumes": {
           "label": "Legumes",
-          "level3": ["phaseolus_bean", "soybean", "cowpea", "groundnut", "other"]
+          "level3": [
+            "Beans",
+            "Groundnuts",
+            "Soybeans",
+            "Cowpeas",
+            "Pigeon peas",
+            "Bambara groundnuts",
+            "Other"
+          ]
         },
-        "oilseed_crops": {
-          "label": "Oilseed Crops",
-          "level3": ["sunflower", "groundnut", "sesame", "other"]
+        "oil_seed": {
+          "label": "Oil Seed",
+          "level3": [
+            "Sunflower",
+            "Groundnuts",
+            "Soybeans",
+            "Sesame",
+            "Other"
+          ]
         },
-        "vegetables_melons": {
-          "label": "Vegetables & Melons",
-          "level3": ["tomato", "rape", "okra", "onion", "cabbage", "other"]
+        "cash_crop": {
+          "label": "Cash Crop",
+          "level3": [
+            "Cotton",
+            "Tobacco",
+            "Sugarcane",
+            "Other"
+          ]
         },
-        "fruit_nuts": {
-          "label": "Fruit & Nuts",
-          "level3": ["mango", "cashew", "groundnut", "banana", "pineapple", "other"]
-        },
-        "industrial_crops": {
-          "label": "Industrial Crops",
-          "level3": ["cotton", "tobacco", "other"]
-        },
-        "other": {
-          "label": "Other",
-          "level3": ["cassava", "sweet_potato", "other"]
+        "vegetables": {
+          "label": "Vegetables",
+          "level3": [
+            "Cassava",
+            "Sweet potato",
+            "Irish potato",
+            "Tomato",
+            "Onion",
+            "Cabbage",
+            "Rape (Kale)",
+            "Pumpkin",
+            "Watermelon",
+            "Okra",
+            "Other"
+          ]
         }
       }
     },
@@ -551,11 +872,15 @@
       "level2": {
         "natural": {
           "label": "Natural",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         },
         "pasture": {
           "label": "Pasture",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -564,11 +889,17 @@
       "level2": {
         "open_forest": {
           "label": "Open Forest",
-          "level3": ["miombo", "mopane", "other"]
+          "level3": [
+            "miombo",
+            "mopane",
+            "other"
+          ]
         },
         "closed_forest": {
           "label": "Closed Forest",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -577,15 +908,21 @@
       "level2": {
         "wooded_savanna": {
           "label": "Wooded Savanna",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         },
         "grassland_savanna": {
           "label": "Grassland Savanna",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         },
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -594,15 +931,25 @@
       "level2": {
         "fruit_orchard": {
           "label": "Fruit Orchard",
-          "level3": ["mango", "banana", "pineapple", "other"]
+          "level3": [
+            "mango",
+            "banana",
+            "pineapple",
+            "other"
+          ]
         },
         "nut_orchard": {
           "label": "Nut Orchard",
-          "level3": ["cashew", "other"]
+          "level3": [
+            "cashew",
+            "other"
+          ]
         },
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -611,11 +958,15 @@
       "level2": {
         "dambo": {
           "label": "Dambo",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         },
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -624,7 +975,9 @@
       "level2": {
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -633,7 +986,9 @@
       "level2": {
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -642,7 +997,9 @@
       "level2": {
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -651,7 +1008,9 @@
       "level2": {
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     }
@@ -660,37 +1019,76 @@
     "cropland": {
       "label": "Cropland",
       "level2": {
-        "cereal_crops": {
-          "label": "Cereal Crops",
-          "level3": ["maize", "rice", "sorghum", "wheat", "mixed_cereals", "other"]
+        "tree_crops": {
+          "label": "Tree Crops",
+          "level3": [
+            "Tea",
+            "Coffee",
+            "Avocado",
+            "Pawpaw",
+            "Apples",
+            "Pears",
+            "Banana",
+            "Citrus",
+            "Coconut",
+            "Cashew nuts",
+            "Jack fruit",
+            "Macadamia",
+            "Mangoes",
+            "Tree tomato",
+            "Other"
+          ]
+        },
+        "cereals": {
+          "label": "Cereals",
+          "level3": [
+            "Maize",
+            "Irrigated rice",
+            "Wheat",
+            "Sorghum",
+            "Barley",
+            "Millet",
+            "Other"
+          ]
         },
         "legumes": {
           "label": "Legumes",
-          "level3": ["phaseolus_bean", "soybean", "cassava", "sweet_potato", "groundnut", "other"]
+          "level3": [
+            "Cowpea",
+            "Beans",
+            "Groundnuts",
+            "Lentils",
+            "Green grams",
+            "Pigeon peas",
+            "Soybeans",
+            "Other"
+          ]
         },
-        "oilseed_crops": {
-          "label": "Oilseed Crops",
-          "level3": ["sunflower", "groundnut", "other"]
-        },
-        "vegetables_melons": {
-          "label": "Vegetables & Melons",
-          "level3": ["cabbage", "tomato", "onion", "okra", "other"]
-        },
-        "fruit_nuts": {
-          "label": "Fruit & Nuts",
-          "level3": ["bananas", "mango", "avocado", "pawpaw", "other"]
-        },
-        "cash_crops": {
-          "label": "Cash Crops",
-          "level3": ["tea", "coffee", "sugarcane", "other"]
-        },
-        "pastures": {
-          "label": "Pastures",
-          "level3": ["napier_grass", "natural_pasture", "other"]
-        },
-        "other": {
-          "label": "Other",
-          "level3": ["other"]
+        "vegetables": {
+          "label": "Vegetables",
+          "level3": [
+            "Irish potatoes",
+            "Kale",
+            "Tomato",
+            "Sweet potatoes",
+            "Lettuce",
+            "Broccoli",
+            "Arrow roots",
+            "Capsicum",
+            "French beans",
+            "Sugarcane",
+            "Spinach",
+            "Eggplant",
+            "Cassava",
+            "Cabbage",
+            "Amaranth",
+            "Okra",
+            "Carrots",
+            "Onions",
+            "Pineapple",
+            "Watermelon",
+            "Other"
+          ]
         }
       }
     },
@@ -699,15 +1097,26 @@
       "level2": {
         "cereal_crops": {
           "label": "Cereal Crops",
-          "level3": ["maize", "sorghum", "millet", "other"]
+          "level3": [
+            "maize",
+            "sorghum",
+            "millet",
+            "other"
+          ]
         },
         "legumes": {
           "label": "Legumes",
-          "level3": ["phaseolus_bean", "cowpea", "other"]
+          "level3": [
+            "phaseolus_bean",
+            "cowpea",
+            "other"
+          ]
         },
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -716,11 +1125,16 @@
       "level2": {
         "natural": {
           "label": "Natural Grassland",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         },
         "pasture": {
           "label": "Pasture",
-          "level3": ["napier_grass", "other"]
+          "level3": [
+            "napier_grass",
+            "other"
+          ]
         }
       }
     },
@@ -729,11 +1143,19 @@
       "level2": {
         "open_forest": {
           "label": "Open Forest",
-          "level3": ["indigenous", "plantation", "other"]
+          "level3": [
+            "indigenous",
+            "plantation",
+            "other"
+          ]
         },
         "closed_forest": {
           "label": "Closed Forest",
-          "level3": ["indigenous", "plantation", "other"]
+          "level3": [
+            "indigenous",
+            "plantation",
+            "other"
+          ]
         }
       }
     },
@@ -742,15 +1164,21 @@
       "level2": {
         "shrubland": {
           "label": "Shrubland",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         },
         "woodland": {
           "label": "Woodland",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         },
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -759,7 +1187,9 @@
       "level2": {
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -768,7 +1198,9 @@
       "level2": {
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -777,7 +1209,9 @@
       "level2": {
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
         }
       }
     },
@@ -786,7 +1220,159 @@
       "level2": {
         "other": {
           "label": "Other",
-          "level3": ["other"]
+          "level3": [
+            "other"
+          ]
+        }
+      }
+    }
+  },
+  "GHA": {
+    "cropland": {
+      "label": "Cropland",
+      "level2": {
+        "tree_crop": {
+          "label": "Tree Crop",
+          "level3": [
+            "Oil palm",
+            "Cocoa",
+            "Mango",
+            "Rubber",
+            "Orange",
+            "Banana",
+            "Other"
+          ]
+        },
+        "cereals": {
+          "label": "Cereals",
+          "level3": [
+            "Maize",
+            "Millet",
+            "Wheat",
+            "Rice",
+            "Soybeans",
+            "Other"
+          ]
+        },
+        "tubers": {
+          "label": "Tubers",
+          "level3": [
+            "Yam",
+            "Cassava",
+            "Cocoyam/Taro",
+            "Other"
+          ]
+        },
+        "vegetables": {
+          "label": "Vegetables",
+          "level3": [
+            "Pineapple",
+            "Cabbage",
+            "Tomato",
+            "Pepper",
+            "Other"
+          ]
+        }
+      }
+    },
+    "grassland": {
+      "label": "Grassland",
+      "level2": {
+        "other": {
+          "label": "Other",
+          "level3": [
+            "other"
+          ]
+        }
+      }
+    },
+    "forest": {
+      "label": "Forest",
+      "level2": {
+        "open_forest": {
+          "label": "Open Forest",
+          "level3": [
+            "other"
+          ]
+        },
+        "closed_forest": {
+          "label": "Closed Forest",
+          "level3": [
+            "other"
+          ]
+        }
+      }
+    },
+    "shrubland": {
+      "label": "Shrubland",
+      "level2": {
+        "other": {
+          "label": "Other",
+          "level3": [
+            "other"
+          ]
+        }
+      }
+    },
+    "bare_soil": {
+      "label": "Bare Soil",
+      "level2": {
+        "other": {
+          "label": "Other",
+          "level3": [
+            "other"
+          ]
+        }
+      }
+    },
+    "water": {
+      "label": "Water",
+      "level2": {
+        "other": {
+          "label": "Other",
+          "level3": [
+            "other"
+          ]
+        }
+      }
+    },
+    "settlement": {
+      "label": "Settlement",
+      "level2": {
+        "other": {
+          "label": "Other",
+          "level3": [
+            "other"
+          ]
+        }
+      }
+    },
+    "wetland": {
+      "label": "Wetland",
+      "level2": {
+        "aquatic_vegetation": {
+          "label": "Aquatic Vegetation",
+          "level3": [
+            "Mangrove",
+            "other"
+          ]
+        },
+        "other": {
+          "label": "Other",
+          "level3": [
+            "other"
+          ]
+        }
+      }
+    },
+    "other": {
+      "label": "Other",
+      "level2": {
+        "other": {
+          "label": "Other",
+          "level3": [
+            "other"
+          ]
         }
       }
     }

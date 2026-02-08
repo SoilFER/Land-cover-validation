@@ -1,4 +1,248 @@
 {
+  "HND": {
+    "bare_soil": {
+      "label": "Bare Soil",
+      "level2": {
+        "otro": {
+          "label": "Otro",
+          "level3": [
+            "Otro"
+          ]
+        }
+      }
+    },
+    "cropland": {
+      "label": "Cropland",
+      "level2": {
+        "agroforestal": {
+          "label": "Agroforestal",
+          "level3": [
+            "Café",
+            "Cardamomo",
+            "C_Af_Otro"
+          ]
+        },
+        "agroindustrial": {
+          "label": "Agroindustrial",
+          "level3": [
+            "Banano",
+            "C_A_Otro",
+            "Caña Azucar",
+            "Hule",
+            "Palma Aceitera"
+          ]
+        },
+        "arable_land": {
+          "label": "Arable land",
+          "level3": [
+            "Arable land"
+          ]
+        },
+        "cucurbitaceas": {
+          "label": "Cucurbitaceas",
+          "level3": [
+            "Ayote",
+            "C_C_Otro",
+            "Guicoy",
+            "Melón",
+            "Pepino",
+            "Sandía"
+          ]
+        },
+        "frutal": {
+          "label": "Frutal",
+          "level3": [
+            "Aguacate",
+            "C_F_Otro",
+            "Guanaba",
+            "Jocote",
+            "limón",
+            "Macadamia",
+            "Mango",
+            "Rambutan"
+          ]
+        },
+        "granos": {
+          "label": "Granos",
+          "level3": [
+            "C_G_Otro",
+            "Cebada",
+            "Frijol",
+            "Maiz",
+            "Maiz-frijol",
+            "Sorgo",
+            "Maiz frijol guicoy"
+          ]
+        },
+        "otro": {
+          "label": "Otro",
+          "level3": [
+            "Achiote",
+            "C_O_Otro",
+            "Flores",
+            "Fresas",
+            "Mashán/Maxan",
+            "Moras",
+            "Pacaya",
+            "Piña"
+          ]
+        },
+        "vegetales": {
+          "label": "Vegetales",
+          "level3": [
+            "Apio",
+            "Brocoli",
+            "C_V_Otro",
+            "Cebolla",
+            "Coliflor",
+            "Ejote",
+            "Guisquil",
+            "Haba",
+            "Papa",
+            "Repollo",
+            "Tomate",
+            "Zanahoria"
+          ]
+        }
+      }
+    },
+    "open_forest": {
+      "label": "Open Forest",
+      "level2": {
+        "natural": {
+          "label": "Natural",
+          "level3": [
+            "Conifera",
+            "Latifoliado",
+            "Mixto"
+          ]
+        },
+        "plantacion": {
+          "label": "Plantación",
+          "level3": [
+            "Ciprés",
+            "OF_P_Otro",
+            "Palo Blanco",
+            "Pino",
+            "Teca"
+          ]
+        }
+      }
+    },
+    "closed_forest": {
+      "label": "Closed Forest",
+      "level2": {
+        "natural": {
+          "label": "Natural",
+          "level3": [
+            "Conifera",
+            "Latifoliado",
+            "Mixto"
+          ]
+        },
+        "plantacion": {
+          "label": "Plantación",
+          "level3": [
+            "Ciprés",
+            "CF_P_Otro",
+            "Palo Blanco",
+            "Pino",
+            "Teca"
+          ]
+        }
+      }
+    },
+    "grassland": {
+      "label": "Grassland",
+      "level2": {
+        "artificial": {
+          "label": "Artificial",
+          "level3": [
+            "G_A_Otro"
+          ]
+        },
+        "natural": {
+          "label": "Natural",
+          "level3": [
+            "G_N_Otro"
+          ]
+        }
+      }
+    },
+    "otro": {
+      "label": "Otro",
+      "level2": {
+        "otro": {
+          "label": "Otro",
+          "level3": [
+            "Otro"
+          ]
+        }
+      }
+    },
+    "settlement": {
+      "label": "Settlement",
+      "level2": {
+        "huerto": {
+          "label": "Huerto",
+          "level3": [
+            "Otro"
+          ]
+        },
+        "invernadero": {
+          "label": "Invernadero",
+          "level3": [
+            "Otro"
+          ]
+        },
+        "otro": {
+          "label": "Otro",
+          "level3": [
+            "Otro"
+          ]
+        },
+        "vivero": {
+          "label": "Vivero",
+          "level3": [
+            "Otro"
+          ]
+        }
+      }
+    },
+    "shrubland": {
+      "label": "Shrubland",
+      "level2": {
+        "otro": {
+          "label": "Otro",
+          "level3": [
+            "Otro"
+          ]
+        }
+      }
+    },
+    "water": {
+      "label": "Water",
+      "level2": {
+        "otro": {
+          "label": "Otro",
+          "level3": [
+            "Otro"
+          ]
+        }
+      }
+    },
+    "wetland": {
+      "label": "Wetland",
+      "level2": {
+        "otro": {
+          "label": "Otro",
+          "level3": [
+            "Otro"
+          ]
+        }
+      }
+    }
+  },
   "GTM": {
     "bare_soil": {
       "label": "Bare Soil",

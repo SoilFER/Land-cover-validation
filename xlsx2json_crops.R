@@ -20,7 +20,7 @@ library(stringi)
 # ----------------------------
 # Paths (edit as needed)
 # ----------------------------
-PATH_XLSX <- "List_of_crops_update_all.xlsx"
+PATH_XLSX <- "List_of_crops_update_all_3.xlsx"
 PATH_JSON_OUT <- "crops_from_excel.json"
 
 # Optional: if you want to compare/align with an existing JSON structure

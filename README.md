@@ -1,4 +1,6 @@
-# 🌍 Land Cover Validation System
+# [🌍 Land Cover Validation System](https://validate.soildecisions.com/)
+
+[link to the site](https://validate.soildecisions.com/)
 
 > **Multi-country land cover classification validation system for the SoilFER Project**
 

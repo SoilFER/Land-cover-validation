@@ -69,6 +69,9 @@ A comprehensive system for validating land cover classifications collected throu
   - **Guatemala (GTM)**: Detailed crop types (Granos, Agroforestal, Frutal, Agroindustrial), forest types (Natural: Mixto/Conífera/Latifoliado, Plantación: Pino/Teca/Ciprés), grasslands (Natural/Artificial), settlements (Invernadero/Huerto/Vivero)
   - **Honduras (HND)**: Same structure as Guatemala with country-specific variations
   - **Tunisia (TUN)**: Cereals, tree crops (olives, dates, citrus), legumes, vegetables with localized naming
+  - **Mozambique (MOZ)**: Country-specific 3-level classification hierarchy
+  - **Zambia (ZMB)**: Country-specific 3-level classification hierarchy
+  - **Kenya (KEN)**: Updated crop classification with full 3-level hierarchy
 
 ---
 
@@ -117,10 +120,10 @@ A comprehensive system for validating land cover classifications collected throu
 | 🇬🇹 Guatemala | GTM | ✅ Active | Array + Flat | ~1,600 |
 | 🇭🇳 Honduras | HND | ✅ Active | Array-based | ~1,300 |
 | 🇹🇳 Tunisia | TUN | ✅ Active | Flat (3 components) | ~1,700 |
-| 🇲🇿 Mozambique | MOZ | 🔄 In Process | TBD | - |
+| 🇲🇿 Mozambique | MOZ | ✅ Active | TBD | - |
 | 🇬🇭 Ghana | GHA | 🟡 Planned | TBD | - |
-| 🇿🇲 Zambia | ZMB | 🔄 In Process | TBD | - |
-| 🇰🇪 Kenya | KEN | 🔄 In Process | TBD | - |
+| 🇿🇲 Zambia | ZMB | ✅ Active | TBD | - |
+| 🇰🇪 Kenya | KEN | ✅ Active | TBD | - |
 
 ---
 
@@ -399,14 +402,23 @@ Licensed under CC BY 4.0
 
 ## 🗺️ Project Status
 
-- **Version**: 1.2.0
+- **Version**: 1.3.0
 - **Status**: Active Development
-- **Last Updated**: January 2026
-- **Countries Live**: 2/7 (GTM, TUN)
+- **Last Updated**: March 2026
+- **Countries Live**: 6/7 (GTM, HND, TUN, MOZ, ZMB, KEN)
 - **Records Processed**: ~3,300+
-- **Latest Feature**: Simplified validation workflow with unified hierarchical classification
+- **Latest Feature**: Kenya (KEN) crop classification updated; all countries except Ghana now operational
 
 ## 📝 Changelog
+
+### Version 1.3.0 (March 2026)
+**Feature: Kenya crop list updated + all countries operational**
+
+- 🇰🇪 **Kenya (KEN)**: Updated crop classification list (Level 1 / 2 / 3 hierarchy in `crops.json`)
+- 🌍 **All countries except Ghana now operational**: GTM, HND, TUN, MOZ, ZMB, KEN all active on the platform
+- 📊 **Updated `crops.json` and `crops_from_excel.json`** from latest Excel source (`List_of_crops_update_all_3.xlsx`)
+
+---
 
 ### Version 1.2.0 (January 20, 2026)
 **Feature: Simplified Validation Workflow**

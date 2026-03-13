@@ -957,11 +957,18 @@
             "Other"
           ]
         },
+        "sugarcane": {
+          "label": "Sugarcane",
+          "level3": [
+            "Sugarcane"
+          ]
+        },
         "cereals": {
           "label": "Cereals",
           "level3": [
             "Maize",
             "Irrigated rice",
+            "Dryland rice",
             "Wheat",
             "Sorghum",
             "Barley",
@@ -978,6 +985,7 @@
             "Lentils",
             "Green grams",
             "Pigeon peas",
+            "Monkeynuts",
             "Soybeans",
             "Other"
           ]
@@ -985,27 +993,55 @@
         "vegetables": {
           "label": "Vegetables",
           "level3": [
-            "Irish potatoes",
             "Kale",
             "Tomato",
-            "Sweet potatoes",
             "Lettuce",
             "Broccoli",
-            "Arrow roots",
             "Capsicum",
             "French beans",
-            "Sugarcane",
             "Spinach",
             "Eggplant",
-            "Cassava",
             "Cabbage",
             "Amaranth",
             "Okra",
             "Carrots",
             "Onions",
-            "Pineapple",
             "Watermelon",
             "Other"
+          ]
+        },
+        "pineapples": {
+          "label": "Pineapples",
+          "level3": [
+            "Pineapples"
+          ]
+        },
+        "tubers": {
+          "label": "Tubers",
+          "level3": [
+            "Irish potatoes",
+            "Sweet potatoes",
+            "Arrow roots",
+            "Cassava",
+            "Other"
+          ]
+        },
+        "greenhouses": {
+          "label": "Greenhouses",
+          "level3": [
+            "Greenhouses"
+          ]
+        },
+        "sisal": {
+          "label": "Sisal",
+          "level3": [
+            "Sisal"
+          ]
+        },
+        "tobacco": {
+          "label": "Tobacco",
+          "level3": [
+            "Tobacco"
           ]
         }
       }
@@ -1069,6 +1105,18 @@
             "Bare land"
           ]
         },
+        "snow": {
+          "label": "Snow",
+          "level3": [
+            "Snow"
+          ]
+        },
+        "salt_pans": {
+          "label": "Salt pans",
+          "level3": [
+            "Salt pans"
+          ]
+        },
         "other": {
           "label": "Other",
           "level3": [
@@ -1101,6 +1149,7 @@
           "label": "Natural",
           "level3": [
             "Rivers",
+            "Ocean",
             "Lakes"
           ]
         },
@@ -1116,6 +1165,17 @@
           "label": "Other",
           "level3": [
             "Other"
+          ]
+        }
+      }
+    },
+    "vegetated_wetlands": {
+      "label": "Vegetated Wetlands",
+      "level2": {
+        "vegetated_wetlands": {
+          "label": "Vegetated Wetlands",
+          "level3": [
+            "Vegetated Wetlands"
           ]
         }
       }

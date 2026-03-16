@@ -18,11 +18,12 @@ jobs:
       uses: docker/setup-buildx-action@v3
 
     - name: Build Docker image
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: ./Dockerfile
         push: false
+        load: true
         tags: land-cover-validation:${{ github.sha }}
         cache-from: type=gha
         cache-to: type=gha,mode=max

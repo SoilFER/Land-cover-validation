@@ -1043,6 +1043,32 @@
           "level3": [
             "Tobacco"
           ]
+        },
+        "pasture": {
+          "label": "Pasture",
+          "level3": [
+            "Nappier",
+            "Oat",
+            "Grass",
+            "Mixed",
+            "other"
+          ]
+        },
+        "oil_crop": {
+          "label": "Oil Crop",
+          "level3": [
+            "Sunflower",
+            "canolla",
+            "simsim",
+            "mixed",
+            "other"
+          ]
+        },
+        "other": {
+          "label": "Other",
+          "level3": [
+            "Other"
+          ]
         }
       }
     },

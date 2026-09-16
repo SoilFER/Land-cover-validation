@@ -1533,42 +1533,151 @@
         "closed_forest": {
           "label": "Closed forest",
           "level3": [
-            "other"
+            "Closed forest",
+            "Other"
           ]
         },
         "open_forest": {
           "label": "Open forest",
           "level3": [
-            "other"
+            "Open forest",
+            "Other"
+          ]
+        }
+      }
+    },
+    "agroforestry": {
+      "label": "Agroforestry",
+      "level2": {
+        "agroforestry": {
+          "label": "Agroforestry",
+          "level3": [
+            "Cocoa",
+            "Mango",
+            "Maize",
+            "Other"
+          ]
+        }
+      }
+    },
+    "savanna": {
+      "label": "Savanna",
+      "level2": {
+        "open_savanna": {
+          "label": "Open savanna",
+          "level3": [
+            "Open savanna",
+            "Other"
           ]
         },
-        "other": {
-          "label": "other",
+        "closed_savanna": {
+          "label": "closed savanna",
           "level3": [
+            "closed savanna",
             "other"
           ]
         }
       }
     },
-    "shrubland": {
-      "label": "Shrubland",
+    "wetlands": {
+      "label": "Wetlands",
       "level2": {
-        "closed_shrubland": {
-          "label": "Closed shrubland",
+        "permanently_flooded_woody": {
+          "label": "Permanently flooded woody",
           "level3": [
-            "other"
+            "Permanently flooded woody"
           ]
         },
-        "open_shrubland": {
-          "label": "Open shrubland",
+        "seasonally_flooded_woody": {
+          "label": "Seasonally flooded woody",
           "level3": [
-            "other"
+            "Seasonally flooded woody"
+          ]
+        },
+        "swamp": {
+          "label": "Swamp",
+          "level3": [
+            "Swamp"
           ]
         },
         "other": {
           "label": "Other",
           "level3": [
-            "other"
+            "Other"
+          ]
+        }
+      }
+    },
+    "mangroves": {
+      "label": "Mangroves",
+      "level2": {
+        "tree_mangroves": {
+          "label": "Tree mangroves",
+          "level3": [
+            "Tree mangroves"
+          ]
+        },
+        "shrub_mangroves": {
+          "label": "Shrub mangroves",
+          "level3": [
+            "Shrub mangroves"
+          ]
+        },
+        "other": {
+          "label": "Other",
+          "level3": [
+            "Other"
+          ]
+        }
+      }
+    },
+    "mining": {
+      "label": "Mining",
+      "level2": {
+        "mining": {
+          "label": "Mining",
+          "level3": [
+            "Mining"
+          ]
+        }
+      }
+    },
+    "salt_pan": {
+      "label": "Salt pan",
+      "level2": {
+        "salt_pan": {
+          "label": "Salt pan",
+          "level3": [
+            "Salt pan"
+          ]
+        }
+      }
+    },
+    "shrubland_thicket": {
+      "label": "Shrubland/Thicket",
+      "level2": {
+        "closed_shrubland": {
+          "label": "Closed shrubland",
+          "level3": [
+            "Closed shrubland"
+          ]
+        },
+        "open_shrubland": {
+          "label": "Open shrubland",
+          "level3": [
+            "Open shrubland"
+          ]
+        },
+        "thicket": {
+          "label": "Thicket",
+          "level3": [
+            "Thicket"
+          ]
+        },
+        "other": {
+          "label": "Other",
+          "level3": [
+            "Other"
           ]
         }
       }
@@ -1576,48 +1685,25 @@
     "grassland": {
       "label": "Grassland",
       "level2": {
-        "savanna": {
-          "label": "Savanna",
+        "grassland": {
+          "label": "Grassland",
           "level3": [
-            "other"
-          ]
-        },
-        "shrub_savanna": {
-          "label": "Shrub savanna",
-          "level3": [
-            "other"
+            "Grassland"
           ]
         },
         "other": {
-          "label": "other",
+          "label": "Other",
           "level3": [
-            "other"
+            "Other grassland"
           ]
         }
       }
     },
-    "aquatic_vegetation": {
-      "label": "Aquatic vegetation",
+    "cropland_rainfed": {
+      "label": "Cropland Rainfed",
       "level2": {
-        "mangrove": {
-          "label": "Mangrove",
-          "level3": [
-            "other"
-          ]
-        },
-        "other": {
-          "label": "other",
-          "level3": [
-            "other"
-          ]
-        }
-      }
-    },
-    "cropland": {
-      "label": "Cropland",
-      "level2": {
-        "tree_crop": {
-          "label": "Tree crop",
+        "tree_crop_plantation": {
+          "label": "Tree crop plantation",
           "level3": [
             "Oil palm",
             "Cocoa",
@@ -1625,7 +1711,73 @@
             "Rubber",
             "Orange",
             "Banana",
-            "other"
+            "Other tree crop plantation Rainfed"
+          ]
+        },
+        "cereals": {
+          "label": "Cereals",
+          "level3": [
+            "Maize",
+            "Millet",
+            "Wheat",
+            "Rice",
+            "Other cereals Rainfed"
+          ]
+        },
+        "legume": {
+          "label": "Legume",
+          "level3": [
+            "Soybeans",
+            "Beans",
+            "Other legume rainfed"
+          ]
+        },
+        "tubers": {
+          "label": "Tubers",
+          "level3": [
+            "Yam",
+            "Cassava",
+            "Cocoyam/Taro",
+            "other tubers Rainfed"
+          ]
+        },
+        "vegetables": {
+          "label": "Vegetables",
+          "level3": [
+            "Pineapple",
+            "Cabbage",
+            "Tomato",
+            "Pepeper",
+            "Other vegetables Rainfed"
+          ]
+        },
+        "arable_land": {
+          "label": "Arable land",
+          "level3": [
+            "Other arable land Rainfed"
+          ]
+        },
+        "other_cropland_rainfed": {
+          "label": "Other Cropland Rainfed",
+          "level3": [
+            "Other Cropland Rainfed"
+          ]
+        }
+      }
+    },
+    "cropland_irrigated": {
+      "label": "Cropland Irrigated",
+      "level2": {
+        "tree_crop_plantation": {
+          "label": "Tree crop plantation",
+          "level3": [
+            "Oil palm",
+            "Cocoa",
+            "Mango",
+            "Rubber",
+            "Orange",
+            "Banana",
+            "Other Tree crop plantation irrigated"
           ]
         },
         "cereals": {
@@ -1636,16 +1788,15 @@
             "Wheat",
             "Rice",
             "Soybeans",
-            "other"
+            "Other Cereals irrigated"
           ]
         },
-        "tubers": {
-          "label": "Tubers",
+        "legume": {
+          "label": "Legume",
           "level3": [
-            "Yam",
-            "Cassava",
-            "Cocoyam/Taro",
-            "other"
+            "Soybeans",
+            "Beans",
+            "Other legume irrigated"
           ]
         },
         "vegetables": {
@@ -1655,19 +1806,19 @@
             "Cabbage",
             "Tomato",
             "Pepeper",
-            "Other"
+            "Other Vegetables  Irrigated"
           ]
         },
         "arable_land": {
           "label": "Arable land",
           "level3": [
-            "other"
+            "Other Arable land Irrigated"
           ]
         },
         "other": {
-          "label": "other",
+          "label": "Other",
           "level3": [
-            "other"
+            "Other Tree crop plantation irrigated"
           ]
         }
       }
@@ -1675,34 +1826,34 @@
     "bare_surface": {
       "label": "Bare surface",
       "level2": {
-        "rocks": {
-          "label": "Rocks",
+        "bare_rocks": {
+          "label": "Bare rocks",
           "level3": [
-            "Other"
+            "Bare rocks"
           ]
         },
         "salt_deposits": {
           "label": "Salt deposits",
           "level3": [
-            "Other"
+            "Salt deposits"
           ]
         },
         "bare_soil": {
           "label": "Bare soil",
           "level3": [
-            "Other"
+            "Bare soil"
           ]
         },
         "beeches": {
           "label": "Beeches",
           "level3": [
-            "Other"
+            "Beeches"
           ]
         },
-        "other": {
-          "label": "other",
+        "other_bare_surface": {
+          "label": "Other Bare surface",
           "level3": [
-            "other"
+            "Other Bare surface"
           ]
         }
       }
@@ -1710,17 +1861,32 @@
     "buil_up": {
       "label": "Buil-up",
       "level2": {
-        "non_linear": {
-          "label": "Non-linear",
+        "urban_areas": {
+          "label": "Urban areas",
           "level3": [
-            "Urban areas",
-            "Rural villages",
-            "Industrial and other",
+            "Urban areas"
+          ]
+        },
+        "rural_villages": {
+          "label": "Rural villages",
+          "level3": [
+            "Rural villages"
+          ]
+        },
+        "industrial_and_other": {
+          "label": "Industrial and other",
+          "level3": [
+            "Industrial and other"
+          ]
+        },
+        "infrastructure": {
+          "label": "Infrastructure",
+          "level3": [
             "Infrastructure"
           ]
         },
-        "linear": {
-          "label": "Linear",
+        "roads": {
+          "label": "Roads",
           "level3": [
             "Roads"
           ]
@@ -1732,9 +1898,9 @@
           ]
         },
         "other": {
-          "label": "other",
+          "label": "Other",
           "level3": [
-            "other"
+            "Other"
           ]
         }
       }
@@ -1756,9 +1922,9 @@
           ]
         },
         "other": {
-          "label": "other",
+          "label": "Other",
           "level3": [
-            "other"
+            "Other"
           ]
         }
       }
